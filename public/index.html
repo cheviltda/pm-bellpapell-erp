@@ -15,7 +15,19 @@
 <div class="sub">Reservas compartilhadas no banco online</div>
 </div>
 <button class="btn primary" onclick="newRes()">+ Nova reserva</button>
-</header>><div class="panel"><div class="calendar" id="cal"></div></div><div class="section panel"><table class="table"><thead><tr><th>Data</th><th>Cliente</th><th>Kit</th><th>Valor</th><th>Status</th><th>Ação</th></tr></thead><tbody id="resRows"></tbody></table></div></section>
+</header>><<div class="panel">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;gap:8px">
+<button class="btn light" onclick="changeMonth(-1)">◀</button>
+<b id="calTitle" style="font-size:16px;text-align:center"></b>
+<button class="btn light" onclick="changeMonth(1)">▶</button>
+</div>
+
+<div style="text-align:center;margin-bottom:12px">
+<button class="btn light" onclick="goToday()">📅 Hoje</button>
+</div>
+
+<div class="calendar" id="cal"></div>
+</div>div class="panel"><div class="section panel"><table class="table"><thead><tr><th>Data</th><th>Cliente</th><th>Kit</th><th>Valor</th><th>Status</th><th>Ação</th></tr></thead><tbody id="resRows"></tbody></table></div></section>
 <section id="clients" class="page"><header><h1>Clientes</h1><button class="btn primary" onclick="newClient()">+ Novo cliente</button></header><div class="panel"><table class="table"><thead><tr><th>Nome</th><th>WhatsApp</th><th>CPF</th><th>Ação</th></tr></thead><tbody id="clientRows"></tbody></table></div></section>
 <section id="items" class="page"><header><h1>Acervo</h1><button class="btn primary" onclick="newItem()">+ Nova peça</button></header><div class="panel"><table class="table"><thead><tr><th>Item</th><th>Total</th><th>Disponível hoje</th></tr></thead><tbody id="itemRows"></tbody></table></div></section>
 <section id="kits" class="page"><header><h1>Kits</h1><button class="btn primary" onclick="newKit()">+ Novo kit</button></header><div id="kitRows"></div></section>
