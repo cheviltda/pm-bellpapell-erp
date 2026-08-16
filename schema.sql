@@ -1,0 +1,3 @@
+-- P&M Bellpapell ERP V5
+-- O servidor cria estas tabelas automaticamente.
+-- Se usar um PostgreSQL gerenciado, crie um banco vazio e a aplicação executará a inicialização.
