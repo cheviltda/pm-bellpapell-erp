@@ -71,5 +71,5 @@ app.post("/api/users",auth,admin,async(req,res)=>{const x=req.body;if(!x.name||!
 app.put("/api/users/:id",auth,admin,async(req,res)=>{const x=req.body;if(x.password){const h=bcrypt.hashSync(x.password,10);await q("UPDATE users SET name=$1,email=$2,role=$3,password_hash=$4 WHERE id=$5",[x.name,x.email,x.role,h,req.params.id])}else await q("UPDATE users SET name=$1,email=$2,role=$3 WHERE id=$4",[x.name,x.email,x.role,req.params.id]);res.json({ok:true})});
 
 app.get("/api/health",async(req,res)=>{try{await q("SELECT 1");res.json({ok:true,version:"5.0.0",database:"online"})}catch(e){res.status(503).json({ok:false,error:e.message})}});
-app.get("*",(req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
+app.get("/{*splat}",(req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
 init().then(()=>app.listen(PORT,()=>console.log("P&M ERP V5 em http://localhost:"+PORT))).catch(e=>{console.error(e);process.exit(1)});
