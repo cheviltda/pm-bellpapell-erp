@@ -66,6 +66,9 @@ function let calDate=new Date();
 let calYear=calDate.getFullYear();
 let calMonth=calDate.getMonth();
 
+let calYear=new Date().getFullYear();
+let calMonth=new Date().getMonth();
+
 function calendar(){
 let first=new Date(calYear,calMonth,1).getDay();
 let days=new Date(calYear,calMonth+1,0).getDate();
@@ -76,7 +79,10 @@ let nomes=[
 "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
 ];
 
-calTitle.textContent=nomes[calMonth]+" de "+calYear;
+let titulo=document.getElementById("calTitle");
+if(titulo){
+titulo.textContent=nomes[calMonth]+" de "+calYear;
+}
 
 for(let i=0;i<first;i++){
 h+='<div class="day"></div>';
@@ -102,7 +108,9 @@ h+=`
 <div class="day" style="${isToday?'border:2px solid var(--p);':''}">
 <b>${d0}</b>
 ${ev.map(r=>`
-<span class="event" onclick="showReservation(${r.id})" style="cursor:pointer">
+<span class="event"
+onclick="showReservation(${r.id})"
+style="cursor:pointer">
 ${esc(r.client_name)} • ${esc(r.kit_name)}
 </span>
 `).join("")}
@@ -110,6 +118,104 @@ ${esc(r.client_name)} • ${esc(r.kit_name)}
 }
 
 cal.innerHTML=h;
-  }
+}
+
+function changeMonth(n){
+calMonth+=n;
+
+if(calMonth<0){
+calMonth=11;
+calYear--;
+}
+
+if(calMonth>11){
+calMonth=0;
+calYear++;
+}
+
+calendar();
+}
+
+function goToday(){
+let n=new Date();
+calYear=n.getFullYear();
+calMonth=n.getMonth();
+calendar();
+}
+
+function showReservation(id){
+let r=data.res.find(x=>Number(x.id)===Number(id));
+
+if(!r)return;
+
+open(`
+<h2>Detalhes da reserva</h2>
+
+<div class="field">
+<label>Cliente</label>
+<div style="padding:10px;background:#f7f5f6;border-radius:8px">
+${esc(r.client_name)}
+</div>
+</div>
+
+<div class="field" style="margin-top:10px">
+<label>Kit</label>
+<div style="padding:10px;background:#f7f5f6;border-radius:8px">
+${esc(r.kit_name)}
+</div>
+</div>
+
+<div class="form" style="margin-top:10px">
+
+<div class="field">
+<label>Data do evento</label>
+<div style="padding:10px;background:#f7f5f6;border-radius:8px">
+${fmt(r.event_date)}
+</div>
+</div>
+
+<div class="field">
+<label>Valor</label>
+<div style="padding:10px;background:#f7f5f6;border-radius:8px">
+${money(r.value)}
+</div>
+</div>
+
+<div class="field">
+<label>Entrada</label>
+<div style="padding:10px;background:#f7f5f6;border-radius:8px">
+${money(r.paid)}
+</div>
+</div>
+
+<div class="field">
+<label>Status</label>
+<div style="padding:10px;background:#f7f5f6;border-radius:8px">
+${esc(r.status)}
+</div>
+</div>
+
+<div class="field">
+<label>Retirada</label>
+<div style="padding:10px;background:#f7f5f6;border-radius:8px">
+${esc(r.pickup||"-")}
+</div>
+</div>
+
+<div class="field">
+<label>Devolução</label>
+<div style="padding:10px;background:#f7f5f6;border-radius:8px">
+${esc(r.return_time||"-")}
+</div>
+</div>
+
+</div>
+
+<div class="actions">
+<button class="btn light" onclick="close()">Fechar</button>
+</div>
+`);
+}
+
 if(token)showApp();
 </script></body></html>
