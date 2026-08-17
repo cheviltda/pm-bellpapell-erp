@@ -66,6 +66,50 @@ function let calDate=new Date();
 let calYear=calDate.getFullYear();
 let calMonth=calDate.getMonth();
 
-let n=new Date(),y=n.getFullYear(),m=n.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),h="";for(let i=0;i<first;i++)h+='<div class="day"></div>';for(let d0=1;d0<=days;d0++){let s=`${y}-${String(m+1).padStart(2,"0")}-${String(d0).padStart(2,"0")}`,ev=data.res.filter(r=>r.status!=="Cancelada" && String(r.event_date).slice(0,10)===s);h+=`<div class="day"><b>${d0}</b>${ev.map(r=>`<span class="event">${esc(r.client_name)} • ${esc(r.kit_name)}</span>`).join("")}</div>`}cal.innerHTML=h}
+function calendar(){
+let first=new Date(calYear,calMonth,1).getDay();
+let days=new Date(calYear,calMonth+1,0).getDate();
+let h="";
+
+let nomes=[
+"Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+"Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
+];
+
+calTitle.textContent=nomes[calMonth]+" de "+calYear;
+
+for(let i=0;i<first;i++){
+h+='<div class="day"></div>';
+}
+
+let hoje=new Date();
+
+for(let d0=1;d0<=days;d0++){
+
+let s=`${calYear}-${String(calMonth+1).padStart(2,"0")}-${String(d0).padStart(2,"0")}`;
+
+let ev=data.res.filter(r=>
+r.status!=="Cancelada" &&
+String(r.event_date).slice(0,10)===s
+);
+
+let isToday=
+d0===hoje.getDate() &&
+calMonth===hoje.getMonth() &&
+calYear===hoje.getFullYear();
+
+h+=`
+<div class="day" style="${isToday?'border:2px solid var(--p);':''}">
+<b>${d0}</b>
+${ev.map(r=>`
+<span class="event" onclick="showReservation(${r.id})" style="cursor:pointer">
+${esc(r.client_name)} • ${esc(r.kit_name)}
+</span>
+`).join("")}
+</div>`;
+}
+
+cal.innerHTML=h;
+  }
 if(token)showApp();
 </script></body></html>
