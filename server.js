@@ -15,6 +15,7 @@ async function init(){
  await pool.query(`
  CREATE TABLE IF NOT EXISTS users(id SERIAL PRIMARY KEY,name TEXT NOT NULL,email TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'operador',created_at TIMESTAMPTZ DEFAULT now());
  CREATE TABLE IF NOT EXISTS clients(id SERIAL PRIMARY KEY,name TEXT NOT NULL,phone TEXT,cpf TEXT,email TEXT,notes TEXT,created_at TIMESTAMPTZ DEFAULT now());
+ ALTER TABLE clients ADD COLUMN IF NOT EXISTS address TEXT;
  CREATE TABLE IF NOT EXISTS items(id SERIAL PRIMARY KEY,name TEXT NOT NULL,quantity INT NOT NULL DEFAULT 0,notes TEXT);
  CREATE TABLE IF NOT EXISTS kits(id SERIAL PRIMARY KEY,name TEXT NOT NULL,price NUMERIC(12,2) NOT NULL DEFAULT 0,active BOOLEAN DEFAULT true);
  CREATE TABLE IF NOT EXISTS kit_parts(id SERIAL PRIMARY KEY,kit_id INT REFERENCES kits(id) ON DELETE CASCADE,item_id INT REFERENCES items(id),quantity INT NOT NULL);
@@ -44,8 +45,8 @@ app.get("/api/me",auth,(req,res)=>res.json({user:req.user}));
 app.get("/api/dashboard",auth,async(req,res)=>{const [a,b,c,m]=await Promise.all([q("SELECT count(*)::int n FROM reservations WHERE status<>'Cancelada'"),q("SELECT count(*)::int n FROM clients"),q("SELECT count(*)::int n FROM items"),q("SELECT COALESCE(sum(value),0) total,COALESCE(sum(paid),0) paid FROM reservations WHERE status<>'Cancelada'")]);res.json({reservations:a[0].n,clients:b[0].n,items:c[0].n,total:Number(m[0].total),paid:Number(m[0].paid),due:Number(m[0].total)-Number(m[0].paid),user:req.user})});
 
 app.get("/api/clients",auth,async(req,res)=>res.json(await q("SELECT * FROM clients ORDER BY name")));
-app.post("/api/clients",auth,async(req,res)=>{const x=req.body;if(!x.name)return res.status(400).json({error:"Nome obrigatório"});const r=await q("INSERT INTO clients(name,phone,cpf,email,notes) VALUES($1,$2,$3,$4,$5) RETURNING id",[x.name,x.phone||"",x.cpf||"",x.email||"",x.notes||""]);res.json(r[0])});
-app.put("/api/clients/:id",auth,async(req,res)=>{const x=req.body;await q("UPDATE clients SET name=$1,phone=$2,cpf=$3,email=$4,notes=$5 WHERE id=$6",[x.name,x.phone||"",x.cpf||"",x.email||"",x.notes||"",req.params.id]);res.json({ok:true})});
+app.post("/api/clients",auth,async(req,res)=>{const x=req.body;if(!x.name)return res.status(400).json({error:"Nome obrigatório"});const r=await q("INSERT INTO clients(name,phone,cpf,address,email,notes) VALUES($1,$2,$3,$4,$5,$6) RETURNING id",[x.name,x.phone||"",x.cpf||"",x.address||"",x.email||"",x.notes||""]);res.json(r[0])});
+app.put("/api/clients/:id",auth,async(req,res)=>{const x=req.body;await q("UPDATE clients SET name=$1,phone=$2,cpf=$3,address=$4,email=$5,notes=$6 WHERE id=$7",[x.name,x.phone||"",x.cpf||"",x.address||"",x.email||"",x.notes||"",req.params.id]);res.json({ok:true})});
 app.delete("/api/clients/:id",auth,async(req,res)=>{try{await q("DELETE FROM clients WHERE id=$1",[req.params.id]);res.json({ok:true})}catch(e){res.status(400).json({error:"Cliente possui reservas vinculadas"})}});
 
 app.get("/api/items",auth,async(req,res)=>{const items=await q("SELECT * FROM items ORDER BY name");const today=new Date().toISOString().slice(0,10);for(const i of items)i.availableToday=await reserved(i.id,today);res.json(items)});
