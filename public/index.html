@@ -104,7 +104,7 @@ function newClient(){
     alert(e.error||"Erro")
   }
  }
-async function delClient(id){if(confirm("Excluir cliente?"))try{await api("/api/clients/"+id,{method:"DELETE"});refresh()}catch(e){alert(e.error||"Erro")}}f
+async function delClient(id){if(confirm("Excluir cliente?"))try{await api("/api/clients/"+id,{method:"DELETE"});refresh()}catch(e){alert(e.error||"Erro")}}
 function showClient(id){
   const c=data.clients.find(x=>Number(x.id)===Number(id));
   if(!c)return;
