@@ -110,49 +110,45 @@ function showClient(id){
   if(!c)return;
 
   open(`
-    <h2>Ficha do cliente</h2>
+    <h2>Editar cliente</h2>
 
     <div class="form">
 
       <div class="field full">
         <label>Nome completo</label>
-        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
-          ${esc(c.name)}
-        </div>
+        <input id="ecn" value="${esc(c.name)}">
       </div>
 
       <div class="field">
         <label>WhatsApp</label>
-        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
-          ${esc(c.phone||"-")}
-        </div>
+        <input id="ecp" value="${esc(c.phone||"")}" placeholder="(24) 99999-9999">
       </div>
 
       <div class="field">
         <label>CPF</label>
-        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
-          ${esc(c.cpf||"-")}
-        </div>
+        <input id="ecc" value="${esc(c.cpf||"")}" placeholder="000.000.000-00">
       </div>
 
       <div class="field full">
         <label>Endereço</label>
-        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
-          ${esc(c.address||"-")}
-        </div>
+        <input id="eca" value="${esc(c.address||"")}" placeholder="Rua, número, bairro, cidade">
       </div>
 
       <div class="field full">
         <label>E-mail</label>
-        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
-          ${esc(c.email||"-")}
-        </div>
+        <input id="ece" type="email" value="${esc(c.email||"")}" placeholder="cliente@email.com">
       </div>
 
     </div>
 
     <div class="actions">
-     <button class="btn light" onclick="document.getElementById('modal').classList.remove('show')">Fechar</button>
+      <button class="btn light" onclick="document.getElementById('modal').classList.remove('show')">
+        Cancelar
+      </button>
+
+      <button class="btn primary" onclick="saveEditedClient(${c.id})">
+        Salvar alterações
+      </button>
     </div>
   `);
 }
