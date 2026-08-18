@@ -179,8 +179,24 @@ function addLine(){let d=document.createElement("div");d.style="display:flex;gap
 async function saveKit(){try{let rows=[...pl.children];await api("/api/kits",{method:"POST",body:JSON.stringify({name:kn.value,price:+kv.value,parts:rows.map(r=>({itemId:+r.children[0].value,quantity:+r.children[1].value}))})});close();refresh()}catch(e){alert(e.error||"Erro")}}
 function newRes(){if(!data.clients.length||!data.kits.length)return alert("Cadastre cliente e kit primeiro.");open(`<h2>Nova reserva</h2><div class="form"><div class="field"><label>Cliente</label><select id="rc">${data.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div class="field"><label>Kit</label><select id="rk">${data.kits.map(k=>`<option value="${k.id}">${esc(k.name)} • ${money(k.price)}</option>`).join("")}</select></div><div class="field"><label>Data</label><input id="rd" type="date"></div><div class="field"><label>Entrada</label><input id="rp" type="number" step=".01" value="0"></div><div class="field"><label>Retirada</label><input id="rpu"></div><div class="field"><label>Devolução</label><input id="rr"></div></div><div class="actions"><button class="btn light" onclick="close()">Cancelar</button><button class="btn primary" onclick="saveRes()">Confirmar</button></div>`)}
 async function saveRes(){try{await api("/api/reservations",{method:"POST",body:JSON.stringify({clientId:+rc.value,kitId:+rk.value,eventDate:rd.value,paid:+rp.value,pickup:rpu.value,returnTime:rr.value})});close();refresh()}catch(e){alert(e.error?e.error+(e.conflicts?"\n"+e.conflicts.map(x=>x.item+": necessário "+x.required+", disponível "+x.available).join("\n"):""):"Erro")}}
-async function cancelRes(id){if(confirm("Cancelar reserva?")){await api("/api/reservations/"+id,{method:"DELETE"});refresh()}}
-async function contract(id){await api("/api/reservations/"+id+"/contract",{method:"POST"});alert("Contrato marcado como gerado. A próxima versão pode integrar assinatura digital.");refresh()}
+async function cancelRes(id){
+  if(!confirm("Cancelar reserva?")) return;
+
+  try{
+    await api("/api/reservations/"+id,{
+      method:"DELETE"
+    });
+
+    data.res=data.res.filter(r=>Number(r.id)!==Number(id));
+
+    await refresh();
+
+    alert("Reserva cancelada com sucesso!");
+  }catch(e){
+    alert(e.error||"Erro ao cancelar reserva");
+  }
+ }
+ async function contract(id){await api("/api/reservations/"+id+"/contract",{method:"POST"});alert("Contrato marcado como gerado. A próxima versão pode integrar assinatura digital.");refresh()}
 function payment(id,due){open(`<h2>Lançar pagamento</h2><div class="field"><label>Valor</label><input id="pa" type="number" step=".01" value="${Math.max(0,due).toFixed(2)}"></div><div class="field"><label>Forma</label><select id="pm"><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Transferência</option></select></div><div class="actions"><button class="btn light" onclick="close()">Cancelar</button><button class="btn primary" onclick="savePay(${id})">Registrar</button></div>`)}
 async function savePay(id){try{await api("/api/payments",{method:"POST",body:JSON.stringify({reservationId:id,amount:+pa.value,method:pm.value})});close();refresh()}catch(e){alert(e.error||"Erro")}}
 async function loadUsers(){try{let u=await api("/api/users");userRows.innerHTML=u.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.email)}</td><td>${esc(x.role)}</td></tr>`).join("")}catch(e){}}
