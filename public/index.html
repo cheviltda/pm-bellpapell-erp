@@ -104,7 +104,58 @@ function newClient(){
     alert(e.error||"Erro")
   }
  }
-async function delClient(id){if(confirm("Excluir cliente?"))try{await api("/api/clients/"+id,{method:"DELETE"});refresh()}catch(e){alert(e.error||"Erro")}}
+async function delClient(id){if(confirm("Excluir cliente?"))try{await api("/api/clients/"+id,{method:"DELETE"});refresh()}catch(e){alert(e.error||"Erro")}}f
+function showClient(id){
+  const c=data.clients.find(x=>Number(x.id)===Number(id));
+  if(!c)return;
+
+  open(`
+    <h2>Ficha do cliente</h2>
+
+    <div class="form">
+
+      <div class="field full">
+        <label>Nome completo</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${esc(c.name)}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>WhatsApp</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${esc(c.phone||"-")}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>CPF</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${esc(c.cpf||"-")}
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Endereço</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${esc(c.address||"-")}
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>E-mail</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${esc(c.email||"-")}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="actions">
+      <button class="btn light" onclick="close()">Fechar</button>
+    </div>
+  `);
+}
 
 async function saveItem(){try{await api("/api/items",{method:"POST",body:JSON.stringify({name:inm.value,quantity:+inq.value})});close();refresh()}catch(e){alert(e.error||"Erro")}}
 function newKit(){let opts=data.items.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join("");open(`<h2>Novo kit</h2><div class="form"><div class="field"><label>Nome</label><input id="kn"></div><div class="field"><label>Valor</label><input id="kv" type="number" step=".01"></div><div class="field full"><label>Peças</label><div id="pl"></div><button class="btn light" onclick="addLine()">+ Peça</button></div></div><div class="actions"><button class="btn light" onclick="close()">Cancelar</button><button class="btn primary" onclick="saveKit()">Salvar</button></div>`);window.opts=opts;addLine()}
