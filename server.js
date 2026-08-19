@@ -55,6 +55,55 @@ app.put("/api/items/:id",auth,async(req,res)=>{const x=req.body;await q("UPDATE 
 
 app.get("/api/kits",auth,async(req,res)=>{const kits=await q("SELECT * FROM kits WHERE active=true ORDER BY name");for(const k of kits)k.parts=await q("SELECT kp.item_id AS \"itemId\",kp.quantity,i.name FROM kit_parts kp JOIN items i ON i.id=kp.item_id WHERE kp.kit_id=$1",[k.id]);res.json(kits)});
 app.post("/api/kits",auth,async(req,res)=>{const x=req.body;if(!x.name||!Array.isArray(x.parts)||!x.parts.length)return res.status(400).json({error:"Nome e composição obrigatórios"});const client=await pool.connect();try{await client.query("BEGIN");const k=(await client.query("INSERT INTO kits(name,price) VALUES($1,$2) RETURNING id",[x.name,+x.price||0])).rows[0];for(const p of x.parts)await client.query("INSERT INTO kit_parts(kit_id,item_id,quantity) VALUES($1,$2,$3)",[k.id,p.itemId,p.quantity]);await client.query("COMMIT");res.json(k)}catch(e){await client.query("ROLLBACK");res.status(400).json({error:e.message})}finally{client.release()}});
+app.put("/api/kits/:id",auth,async(req,res)=>{
+  const x=req.body;
+
+  if(!x.name || !Array.isArray(x.parts) || !x.parts.length){
+    return res.status(400).json({
+      error:"Nome e composição obrigatórios"
+    });
+  }
+
+  const client=await pool.connect();
+
+  try{
+    await client.query("BEGIN");
+
+    await client.query(
+      "UPDATE kits SET name=$1,price=$2 WHERE id=$3",
+      [x.name,+x.price||0,req.params.id]
+    );
+
+    await client.query(
+      "DELETE FROM kit_parts WHERE kit_id=$1",
+      [req.params.id]
+    );
+
+    for(const p of x.parts){
+      await client.query(
+        "INSERT INTO kit_parts(kit_id,item_id,quantity) VALUES($1,$2,$3)",
+        [req.params.id,p.itemId,p.quantity]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    res.json({ok:true});
+
+  }catch(e){
+
+    await client.query("ROLLBACK");
+
+    res.status(400).json({
+      error:e.message
+    });
+
+  }finally{
+
+    client.release();
+
+  }
+});
 app.delete("/api/kits/:id",auth,async(req,res)=>{await q("UPDATE kits SET active=false WHERE id=$1",[req.params.id]);res.json({ok:true})});
 
 app.get("/api/reservations",auth,async(req,res)=>res.json(await q(`SELECT r.*,c.name client_name,k.name kit_name FROM reservations r JOIN clients c ON c.id=r.client_id JOIN kits k ON k.id=r.kit_id ORDER BY r.event_date`)));
