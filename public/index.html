@@ -177,8 +177,104 @@ async function saveItem(){try{await api("/api/items",{method:"POST",body:JSON.st
 function newKit(){let opts=data.items.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join("");open(`<h2>Novo kit</h2><div class="form"><div class="field"><label>Nome</label><input id="kn"></div><div class="field"><label>Valor</label><input id="kv" type="number" step=".01"></div><div class="field full"><label>Peças</label><div id="pl"></div><button class="btn light" onclick="addLine()">+ Peça</button></div></div><div class="actions"><button class="btn light" onclick="close()">Cancelar</button><button class="btn primary" onclick="saveKit()">Salvar</button></div>`);window.opts=opts;addLine()}
 function addLine(){let d=document.createElement("div");d.style="display:flex;gap:6px;margin:6px 0";d.innerHTML=`<select style="flex:1;padding:9px">${opts}</select><input type="number" min="1" value="1" style="width:65px"><button class="btn light" onclick="this.parentElement.remove()">×</button>`;pl.appendChild(d)}
 async function saveKit(){try{let rows=[...pl.children];await api("/api/kits",{method:"POST",body:JSON.stringify({name:kn.value,price:+kv.value,parts:rows.map(r=>({itemId:+r.children[0].value,quantity:+r.children[1].value}))})});close();refresh()}catch(e){alert(e.error||"Erro")}}
-function newRes(){if(!data.clients.length||!data.kits.length)return alert("Cadastre cliente e kit primeiro.");open(`<h2>Nova reserva</h2><div class="form"><div class="field"><label>Cliente</label><select id="rc">${data.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div class="field"><label>Kit</label><select id="rk">${data.kits.map(k=>`<option value="${k.id}">${esc(k.name)} • ${money(k.price)}</option>`).join("")}</select></div><div class="field"><label>Data</label><input id="rd" type="date"></div><div class="field"><label>Entrada</label><input id="rp" type="number" step=".01" value="0,00"></div><div class="field"><label>Retirada</label><input id="rpu"></div><div class="field"><label>Devolução</label><input id="rr"></div></div><div class="actions"><button class="btn light" onclick="close()">Cancelar</button><button class="btn primary" onclick="saveRes()">Confirmar</button></div>`)}
-async function saveRes(){try{await api("/api/reservations",{method:"POST",body:JSON.stringify({clientId:+rc.value,kitId:+rk.value,eventDate:rd.value,paid:+rp.value,pickup:rpu.value,returnTime:rr.value})});close();refresh()}catch(e){alert(e.error?e.error+(e.conflicts?"\n"+e.conflicts.map(x=>x.item+": necessário "+x.required+", disponível "+x.available).join("\n"):""):"Erro")}}
+function newRes(){
+  if(!data.clients.length||!data.kits.length)
+    return alert("Cadastre cliente e kit primeiro.");
+
+  open(`
+    <h2>Nova reserva</h2>
+
+    <div class="form">
+
+      <div class="field">
+        <label>Cliente</label>
+        <select id="rc">
+          ${data.clients.map(c=>`
+            <option value="${c.id}">${esc(c.name)}</option>
+          `).join("")}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Kit</label>
+        <select id="rk">
+          ${data.kits.map(k=>`
+            <option value="${k.id}">
+              ${esc(k.name)} • ${money(k.price)}
+            </option>
+          `).join("")}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Data</label>
+        <input id="rd" type="date">
+      </div>
+
+      <div class="field">
+        <label>Entrada</label>
+        <input id="rp" type="number" step="0.01" placeholder="0,00">
+      </div>
+
+      <div class="field">
+        <label>Retirada</label>
+        <input id="rpu" placeholder="Ex.: 10:00">
+      </div>
+
+      <div class="field">
+        <label>Devolução</label>
+        <input id="rr" placeholder="Ex.: 18:00">
+      </div>
+
+    </div>
+
+    <div class="actions">
+      <button class="btn light"
+        onclick="document.getElementById('modal').classList.remove('show')">
+        Cancelar
+      </button>
+
+      <button class="btn primary" onclick="saveRes()">
+        Confirmar
+      </button>
+    </div>
+  `);
+ }
+async function saveRes(){
+  try{
+    const entrada = rp.value
+      ? Number(String(rp.value).replace(",", "."))
+      : 0;
+
+    await api("/api/reservations",{
+      method:"POST",
+      body:JSON.stringify({
+        clientId:+rc.value,
+        kitId:+rk.value,
+        eventDate:rd.value,
+        paid:entrada,
+        pickup:rpu.value,
+        returnTime:rr.value
+      })
+    });
+
+    document.getElementById('modal').classList.remove('show');
+    await refresh();
+
+  }catch(e){
+    alert(
+      e.error
+      ? e.error + (
+          e.conflicts
+          ? "\n" + e.conflicts.map(
+              x=>x.item+": necessário "+x.required+", disponível "+x.available
+            ).join("\n")
+          : ""
+        )
+      : "Erro"
+    );
+  }
+}
 async function cancelRes(id){
   if(!confirm("Cancelar reserva?")) return;
 
