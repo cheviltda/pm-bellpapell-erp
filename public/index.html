@@ -175,7 +175,118 @@ async function saveEditedClient(id){
 }
 async function saveItem(){try{await api("/api/items",{method:"POST",body:JSON.stringify({name:inm.value,quantity:+inq.value})});close();refresh()}catch(e){alert(e.error||"Erro")}}
 function newKit(){let opts=data.items.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join("");open(`<h2>Novo kit</h2><div class="form"><div class="field"><label>Nome</label><input id="kn"></div><div class="field"><label>Valor</label><input id="kv" type="number" step=".01"></div><div class="field full"><label>Peças</label><div id="pl"></div><button class="btn light" onclick="addLine()">+ Peça</button></div></div><div class="actions"><button class="btn light" onclick="close()">Cancelar</button><button class="btn primary" onclick="saveKit()">Salvar</button></div>`);window.opts=opts;addLine()}
-function addLine(){let d=document.createElement("div");d.style="display:flex;gap:6px;margin:6px 0";d.innerHTML=`<select style="flex:1;padding:9px">${opts}</select><input type="number" min="1" value="1" style="width:65px"><button class="btn light" onclick="this.parentElement.remove()">×</button>`;pl.appendChild(d)}
+function editKit(id){
+  const k=data.kits.find(x=>Number(x.id)===Number(id));
+  if(!k)return;
+
+  let opts=data.items.map(i=>`
+    <option value="${i.id}">
+      ${esc(i.name)}
+    </option>
+  `).join("");
+
+  open(`
+    <h2>Editar kit</h2>
+
+    <div class="form">
+
+      <div class="field">
+        <label>Nome</label>
+        <input id="ekn" value="${esc(k.name)}">
+      </div>
+
+      <div class="field">
+        <label>Valor</label>
+        <input id="ekv" type="number" step="0.01" value="${Number(k.price||0)}">
+      </div>
+
+      <div class="field full">
+        <label>Peças do kit</label>
+        <div id="epl"></div>
+
+        <button class="btn light" type="button" onclick="addEditLine()">
+          + Peça
+        </button>
+      </div>
+
+    </div>
+
+    <div class="actions">
+      <button class="btn light" type="button"
+        onclick="modal.classList.remove('show')">
+        Cancelar
+      </button>
+
+      <button class="btn primary" type="button"
+        onclick="saveEditKit(${k.id})">
+        Salvar alterações
+      </button>
+    </div>
+  `);
+
+  window.editOpts=opts;
+
+  k.parts.forEach(p=>{
+    addEditLine(p.itemId,p.quantity);
+  });
+   }
+
+ function addEditLine(itemId="",quantity=1){
+  let d=document.createElement("div");
+
+  d.style="display:flex;gap:6px;margin:6px 0";
+
+  d.innerHTML=`
+    <select style="flex:1;padding:9px">
+      ${editOpts}
+    </select>
+
+    <input type="number" min="1" value="${quantity}"
+      style="width:65px">
+
+    <button class="btn light" type="button"
+      onclick="this.parentElement.remove()">
+      ×
+    </button>
+  `;
+
+  epl.appendChild(d);
+
+  if(itemId){
+    d.children[0].value=itemId;
+  }
+}
+async function saveEditKit(id){
+  try{
+    const rows=[...epl.children];
+
+    if(!rows.length){
+      return alert("O kit precisa ter pelo menos uma peça.");
+    }
+
+    await api("/api/kits/"+id,{
+      method:"PUT",
+      body:JSON.stringify({
+        name:ekn.value,
+        price:+ekv.value||0,
+        parts:rows.map(r=>({
+          itemId:+r.children[0].value,
+          quantity:+r.children[1].value
+        }))
+      })
+    });
+
+    modal.classList.remove("show");
+
+    await refresh();
+
+    alert("Kit atualizado com sucesso!");
+
+  }catch(e){
+    alert(e.error||"Erro ao atualizar kit");
+  }
+}
+ function addLine(){let d=document.createElement("div");d.style="display:flex;gap:6px;margin:6px 0";d.innerHTML=`<select style="flex:1;padding:9px">${opts}</select><input type="number" min="1" value="1" style="width:65px"><button class="btn light" onclick="this.parentElement.remove()">×</button>`;pl.appendChild(d)}
 async function saveKit(){try{let rows=[...pl.children];await api("/api/kits",{method:"POST",body:JSON.stringify({name:kn.value,price:+kv.value,parts:rows.map(r=>({itemId:+r.children[0].value,quantity:+r.children[1].value}))})});close();refresh()}catch(e){alert(e.error||"Erro")}}
 function newRes(){
   if(!data.clients.length||!data.kits.length)
