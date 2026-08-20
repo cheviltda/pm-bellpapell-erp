@@ -28,6 +28,8 @@ async function init(){
    const hash=bcrypt.hashSync("troque123",10);
    await q("INSERT INTO users(name,email,password_hash,role) VALUES($1,$2,$3,$4)",["P&M Bellpapell","admin@bellpapell.local",hash,"admin"]);
  }
+const usuarios=await q("SELECT id,name,email,role FROM users ORDER BY id");
+console.log("USUARIOS DO ERP:",usuarios);
 }
 function auth(req,res,next){const h=req.headers.authorization||"";if(!h.startsWith("Bearer "))return res.status(401).json({error:"Não autenticado"});try{req.user=jwt.verify(h.slice(7),SECRET);next()}catch(e){res.status(401).json({error:"Sessão expirada"})}}
 function admin(req,res,next){if(req.user.role!=="admin")return res.status(403).json({error:"Acesso restrito ao administrador"});next()}
