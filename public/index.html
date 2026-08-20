@@ -420,7 +420,111 @@ async function saveRes(){
     );
   }
 }
-async function cancelRes(id){
+function showReservation(id){
+  const r=data.res.find(x=>Number(x.id)===Number(id));
+
+  if(!r)return;
+
+  open(`
+    <h2>Detalhes da reserva</h2>
+
+    <div class="form">
+
+      <div class="field full">
+        <label>Cliente</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${esc(r.client_name)}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Data do evento</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${fmt(r.event_date)}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Kit</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${esc(r.kit_name)}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Valor</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${money(r.value)}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Entrada</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${money(r.paid)}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Saldo</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${money(Number(r.value)-Number(r.paid))}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Retirada</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${esc(r.pickup||"-")}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Devolução</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${esc(r.return_time||"-")}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <div style="padding:11px">
+          <span class="badge ${statusClass(r)}">
+            ${r.contract_status==="Gerado" ? "Contrato gerado" : r.status}
+          </span>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Observações</label>
+        <div style="padding:11px;background:#f7f5f6;border-radius:8px">
+          ${esc(r.notes||"-")}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="actions">
+
+      ${
+        r.status!=="Cancelada"
+        ? `<button class="btn danger"
+            onclick="cancelResFromDetails(${r.id})">
+            Cancelar reserva
+          </button>`
+        : ""
+      }
+
+      <button type="button"
+        class="btn light"
+        onclick="modal.classList.remove('show')">
+        Fechar
+      </button>
+
+    </div>
+  `);
+}
+ async function cancelRes(id){
   if(!confirm("Cancelar reserva?")) return;
 
   try{
