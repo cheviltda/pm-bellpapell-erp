@@ -44,7 +44,42 @@ const $=id=>document.getElementById(id),money=v=>Number(v||0).toLocaleString("pt
 async function api(u,o={}){o.headers={...(o.headers||{}),Authorization:"Bearer "+token,"Content-Type":"application/json"};let r=await fetch(u,o),x=await r.json().catch(()=>({}));if(!r.ok)throw x;return x}
 function go(id,b){if(!token)return loginView();document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(id).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));if(b)b.classList.add("active");refresh()}
 function loginView(){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$("login").classList.add("active")}
-async function login(){try{let x=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:le.value,password:lp.value})}).then(async r=>{let z=await r.json();if(!r.ok)throw z;return z});token=x.token;me=x.user;localStorage.setItem("pm_v5_token",token);localStorage.setItem("pm_v5_user",JSON.stringify(me));showApp()}catch(e){lm.style.display="block";lm.textContent=e.error||"Erro"}}
+async function login(){
+  try{
+    const email = document.getElementById("le").value;
+    const password = document.getElementById("lp").value;
+
+    const response = await fetch("/api/login",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        email:email,
+        password:password
+      })
+    });
+
+    const result = await response.json();
+
+    if(!response.ok){
+      throw result;
+    }
+
+    token = result.token;
+    me = result.user;
+
+    localStorage.setItem("pm_v5_token",token);
+    localStorage.setItem("pm_v5_user",JSON.stringify(me));
+
+    showApp();
+
+  }catch(e){
+    const mensagem = e.error || "Erro ao entrar";
+    document.getElementById("lm").style.display="block";
+    document.getElementById("lm").textContent=mensagem;
+  }
+ }
 function logout(){localStorage.clear();token=null;loginView()}
 function showApp(){if(me?.role!=="admin")usersNav.style.display="none";go("dash",document.querySelector(".nav button"))}
 function open(h){
