@@ -86,10 +86,10 @@ function open(h){
   document.getElementById("box").innerHTML=h;
   document.getElementById("modal").classList.add("show");
 }
-function close()
+function close(){
   document.getElementById("modal").style.display="none";
 }
-}
+
 async function refresh(){if(!token)return;try{let [dash,clients,items,kits,res]=await Promise.all([api("/api/dashboard"),api("/api/clients"),api("/api/items"),api("/api/kits"),api("/api/reservations")]);data={clients,items,kits,res};a.textContent=dash.reservations;b.textContent=dash.clients;c.textContent=dash.items;d.textContent=money(dash.due);ft.textContent=money(dash.total);fp.textContent=money(dash.paid);fd.textContent=money(dash.due);fc.textContent=dash.reservations;who.textContent=`Usuário: ${dash.user.name} • ${dash.user.role}`;health.textContent="🟢 Banco online conectado";dashRows.innerHTML=res.filter(r=>String(r.status).toLowerCase()!=="cancelada").slice(0,8).map(r=>`<tr><td>${fmt(r.event_date)}</td><td>${esc(r.client_name)}</td><td>${esc(r.kit_name)}</td><td>${money(r.value)}</td></tr>`).join("")||"<tr><td>Nenhuma reserva.</td></tr>";resRows.innerHTML=res.map(r=>`
 <tr onclick="showReservation(${r.id})" style="cursor:pointer">
   <td>${fmt(r.event_date)}</td>
