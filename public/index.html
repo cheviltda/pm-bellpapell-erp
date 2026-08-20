@@ -524,6 +524,24 @@ function showReservation(id){
     </div>
   `);
 }
+ async function cancelResFromDetails(id){
+  if(!confirm("Cancelar esta reserva?")) return;
+
+  try{
+    await api("/api/reservations/"+id,{
+      method:"DELETE"
+    });
+
+    modal.classList.remove("show");
+
+    await refresh();
+
+    alert("Reserva cancelada com sucesso!");
+
+  }catch(e){
+    alert(e.error||"Erro ao cancelar reserva");
+  }
+ }
  async function cancelRes(id){
   if(!confirm("Cancelar reserva?")) return;
 
