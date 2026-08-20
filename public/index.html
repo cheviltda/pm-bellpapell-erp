@@ -87,7 +87,7 @@ function statusClass(r){
 
   return "confirmada";
 }
-function newItem(){open(`<h2>Nova peça</h2><div class="form"><div class="field"><label>Nome</label><input id="inm"></div><div class="field"><label>Quantidade</label><input id="inq" type="number" min="1" value="1"></div></div><div class="actions"><button class="btn light" onclick="close()">Cancelar</button><button class="btn primary" onclick="saveItem()">Salvar</button></div>`)}
+function newItem(){open(`<h2>Nova peça</h2><div class="form"><div class="field"><label>Nome</label><input id="inm"></div><div class="field"><label>Quantidade</label><input id="inq" type="number" min="1" value="1"></div></div><div class="actions"><button class="btn light" onclick="document.getElementById('modal').classList.remove('show')">Cancelar</button><button class="btn primary" onclick="saveItem()">Salvar</button></div>`)}
 function newClient(){
   open(`
     <h2>Novo cliente</h2>
