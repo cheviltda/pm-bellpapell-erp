@@ -4,7 +4,7 @@
 <link rel="manifest" href="/manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>P&M Bellpapell ERP • V2</title>
+<title>P&M Bellpapell ERP • V22.1</title>
 <style>
 :root{--navy:#182b49;--pink:#d98aa8;--blue:#b9d8ed;--gold:#c8a96b;--bg:#f7f5f6;--white:#fff;--text:#26313d;--muted:#78818d;--green:#4d956f;--red:#bd5962;--orange:#c9873d}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}.app{display:flex;min-height:100vh}.side{position:fixed;inset:0 auto 0 0;width:235px;background:var(--navy);color:#fff;padding:22px 14px}.logo{width:58px;height:58px;border:2px solid var(--gold);border-radius:50%;margin:auto;display:grid;place-items:center;background:linear-gradient(145deg,#f7cbd9,#c8dfef);color:var(--navy);font-weight:bold}.logo.real-logo{border:0;background:transparent;overflow:hidden;width:72px;height:72px}
@@ -125,6 +125,22 @@
  #contractPreview .modalbox{box-shadow:none!important;max-width:none!important;width:100%!important}
  #contractPreview .actions{display:none!important}
  .contract-paper{max-height:none!important;overflow:visible!important;border:0!important}
+}
+
+/* V22.1 - correção exclusiva da Agenda no celular. Mantém a lógica da V22. */
+@media(max-width:560px){
+  .agenda-toolbar{width:100%;gap:8px}
+  .calendar-head{width:100%;gap:6px;align-items:center}
+  .calendar-head h2{font-size:16px;flex:1;min-width:0}
+  .cal-actions{gap:4px;flex-shrink:0}
+  .cal-actions .btn{padding:8px 10px;font-size:12px}
+  .agenda-filters{width:100%;gap:7px}
+  .agenda-filters select,.agenda-filters input{width:100%;min-width:0}
+  .cal-grid{width:100%;grid-template-columns:repeat(7,minmax(0,1fr));overflow:hidden}
+  .cal-week{min-width:0;padding:7px 1px;font-size:9px;overflow:hidden}
+  .cal-day{min-width:0;min-height:72px;height:72px;padding:4px 3px;overflow:hidden;position:relative}
+  .cal-num{font-size:11px;margin-bottom:3px}
+  .cal-event{font-size:8px;line-height:1.15;padding:3px 3px;margin-top:3px;max-width:100%;}
 }
 </style>
 </head>
