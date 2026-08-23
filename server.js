@@ -117,7 +117,51 @@ app.get("/api/payments/:reservationId",auth,async(req,res)=>res.json(await q("SE
 app.post("/api/payments",auth,async(req,res)=>{const x=req.body;if(!x.reservationId||+x.amount<=0)return res.status(400).json({error:"Reserva e valor obrigatórios"});const r=await q("INSERT INTO payments(reservation_id,amount,method,note) VALUES($1,$2,$3,$4) RETURNING id",[x.reservationId,+x.amount,x.method||"",x.note||""]);await q("UPDATE reservations SET paid=COALESCE((SELECT SUM(amount) FROM payments WHERE reservation_id=$1),0) WHERE id=$1",[x.reservationId]);res.json(r[0])});
 
 app.post("/api/reservations/:id/contract",auth,async(req,res)=>{await q("UPDATE reservations SET contract_status='Gerado' WHERE id=$1",[req.params.id]);res.json({ok:true})});
+app.put("/api/me/password",auth,async(req,res)=>{
+  try{
+    const {currentPassword,newPassword}=req.body||{};
 
+    if(!currentPassword || !newPassword){
+      return res.status(400).json({
+        error:"Senha atual e nova senha são obrigatórias"
+      });
+    }
+
+    if(newPassword.length < 6){
+      return res.status(400).json({
+        error:"A nova senha deve ter pelo menos 6 caracteres"
+      });
+    }
+
+    const user=(await q(
+      "SELECT * FROM users WHERE id=$1",
+      [req.user.id]
+    ))[0];
+
+    if(!user || !bcrypt.compareSync(currentPassword,user.password_hash)){
+      return res.status(401).json({
+        error:"Senha atual incorreta"
+      });
+    }
+
+    const hash=bcrypt.hashSync(newPassword,10);
+
+    await q(
+      "UPDATE users SET password_hash=$1 WHERE id=$2",
+      [hash,req.user.id]
+    );
+
+    res.json({
+      ok:true,
+      message:"Senha alterada com sucesso"
+    });
+
+  }catch(e){
+    res.status(500).json({
+      error:e.message
+    });
+  }
+});
 app.get("/api/users",auth,admin,async(req,res)=>res.json(await q("SELECT id,name,email,role,created_at FROM users ORDER BY name")));
 app.post("/api/users",auth,admin,async(req,res)=>{const x=req.body;if(!x.name||!x.email||!x.password)return res.status(400).json({error:"Nome, e-mail e senha obrigatórios"});const hash=bcrypt.hashSync(x.password,10);try{const r=await q("INSERT INTO users(name,email,password_hash,role) VALUES($1,$2,$3,$4) RETURNING id,name,email,role",[x.name,x.email,hash,x.role||"operador"]);res.json(r[0])}catch(e){res.status(400).json({error:"E-mail já cadastrado"})}});
 app.put("/api/users/:id",auth,admin,async(req,res)=>{const x=req.body;if(x.password){const h=bcrypt.hashSync(x.password,10);await q("UPDATE users SET name=$1,email=$2,role=$3,password_hash=$4 WHERE id=$5",[x.name,x.email,x.role,h,req.params.id])}else await q("UPDATE users SET name=$1,email=$2,role=$3 WHERE id=$4",[x.name,x.email,x.role,req.params.id]);res.json({ok:true})});
