@@ -357,6 +357,21 @@
 <div id="clientHistoryContent"></div>
 <div class="actions"><button class="btn light" onclick="closeModal('clientHistory')">Fechar</button></div>
 </div></div>
+<div class="modal" id="passwordModal"><div class="modalbox" style="max-width:520px">
+  <h2>🔐 Trocar senha</h2>
+  <div class="sub" style="margin-bottom:14px">Altere sua senha de acesso ao ERP.</div>
+  <div class="form">
+    <div class="field full"><label>Senha atual</label><input id="currentPassword" type="password" autocomplete="current-password" placeholder="Digite sua senha atual"></div>
+    <div class="field"><label>Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" placeholder="Mínimo de 6 caracteres"></div>
+    <div class="field"><label>Confirmar nova senha</label><input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Repita a nova senha"></div>
+  </div>
+  <div id="passwordMsg" style="display:none;margin-top:12px"></div>
+  <div class="actions">
+    <button class="btn light" type="button" onclick="closeModal('passwordModal')">Cancelar</button>
+    <button class="btn primary" type="button" id="changePasswordBtn" onclick="changePassword()">Alterar senha</button>
+  </div>
+</div></div>
+
 <div class="modal" id="contractPreview"><div class="modalbox contract-modal">
 <h2>Contrato de locação</h2>
 <div id="contractContent" class="contract-paper"></div>
@@ -418,6 +433,97 @@ function closeModal(id){
     editingFinanceId=null;
     document.getElementById('financeEntryTitle').textContent='Novo lançamento';
     document.getElementById('saveFinanceBtn').textContent='Salvar';
+  }
+}
+
+
+function openPasswordModal(){
+  const modal=document.getElementById('passwordModal');
+  if(!modal)return;
+  document.getElementById('currentPassword').value='';
+  document.getElementById('newPassword').value='';
+  document.getElementById('confirmPassword').value='';
+  const msg=document.getElementById('passwordMsg');
+  msg.style.display='none';
+  msg.className='';
+  msg.textContent='';
+  const btn=document.getElementById('changePasswordBtn');
+  btn.disabled=false;
+  btn.textContent='Alterar senha';
+  modal.classList.add('show');
+  setTimeout(()=>document.getElementById('currentPassword')?.focus(),50);
+}
+
+async function changePassword(){
+  const currentPassword=document.getElementById('currentPassword').value;
+  const newPassword=document.getElementById('newPassword').value;
+  const confirmPassword=document.getElementById('confirmPassword').value;
+  const msg=document.getElementById('passwordMsg');
+  const btn=document.getElementById('changePasswordBtn');
+
+  function showPasswordMsg(text,ok=false){
+    msg.textContent=text;
+    msg.className=ok?'success':'danger';
+    msg.style.display='block';
+  }
+
+  if(!currentPassword || !newPassword || !confirmPassword){
+    showPasswordMsg('Preencha todos os campos.');
+    return;
+  }
+  if(newPassword.length<6){
+    showPasswordMsg('A nova senha deve ter pelo menos 6 caracteres.');
+    return;
+  }
+  if(newPassword!==confirmPassword){
+    showPasswordMsg('A confirmação da nova senha não confere.');
+    return;
+  }
+  if(newPassword===currentPassword){
+    showPasswordMsg('A nova senha deve ser diferente da senha atual.');
+    return;
+  }
+
+  btn.disabled=true;
+  btn.textContent='Alterando...';
+  msg.style.display='none';
+
+  try{
+    // O V22.1 não possui tela de login própria. O servidor usa este usuário
+    // administrador para emitir o JWT necessário à troca de senha.
+    const loginResponse=await fetch('/api/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:'admin@bellpapell.local',password:currentPassword})
+    });
+    const loginData=await loginResponse.json().catch(()=>({}));
+    if(!loginResponse.ok || !loginData.token){
+      throw new Error(loginData.error||'Senha atual incorreta.');
+    }
+
+    const response=await fetch('/api/me/password',{
+      method:'PUT',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+loginData.token
+      },
+      body:JSON.stringify({currentPassword,newPassword})
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+      throw new Error(data.error||'Não foi possível alterar a senha.');
+    }
+
+    showPasswordMsg(data.message||'Senha alterada com sucesso!',true);
+    document.getElementById('currentPassword').value='';
+    document.getElementById('newPassword').value='';
+    document.getElementById('confirmPassword').value='';
+    setTimeout(()=>closeModal('passwordModal'),1200);
+  }catch(e){
+    showPasswordMsg(e.message||'Não foi possível alterar a senha.');
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Alterar senha';
   }
 }
 
