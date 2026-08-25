@@ -186,10 +186,10 @@
 <div class="panel">
 <div class="agenda-toolbar">
 <div class="calendar-head"><h2 id="calendarTitle"></h2><div class="cal-actions"><button class="btn light" type="button" onclick="changeMonth(-1)">‹</button><button class="btn light" type="button" onclick="goToday()">Hoje</button><button class="btn light" type="button" onclick="changeMonth(1)">›</button></div></div>
-<div class="agenda-filters"><select id="agendaStatusFilter" onchange="renderCalendar()"><option value="Todos">Todos os status</option><option value="Confirmada">🟢 Confirmada</option><option value="Pendente">🟡 Pendente</option><option value="Cancelada">🔴 Cancelada</option><option value="Contrato gerado">🔵 Contrato gerado</option></select><input id="agendaSearch" placeholder="🔎 Cliente, tema ou kit..." oninput="renderCalendar()"></div>
+<div class="agenda-filters"><select id="agendaStatusFilter" onchange="renderCalendar()"><option value="Todos">Todos os status</option><option value="Confirmada">🟢 Confirmada</option><option value="Pendente">🟡 Pendente</option><option value="Contrato gerado">🔵 Contrato gerado</option></select><input id="agendaSearch" placeholder="🔎 Cliente, tema ou kit..." oninput="renderCalendar()"></div>
 </div>
 <div class="cal-grid" id="calendarGrid"></div>
-<div class="legend"><span class="status-confirmada">🟢 Confirmada</span><span class="status-pendente">🟡 Pendente</span><span class="status-cancelada">🔴 Cancelada</span><span class="status-contrato">🔵 Contrato gerado</span></div>
+<div class="legend"><span class="status-confirmada">🟢 Confirmada</span><span class="status-pendente">🟡 Pendente</span><span class="status-contrato">🔵 Contrato gerado</span></div>
 <div class="agenda-summary" id="agendaSummary"></div>
 </div></section>
 
@@ -394,6 +394,13 @@ kits:[
 ],
 reservations:[]
 };
+// V22.1: limpeza única das reservas de teste usadas durante a configuração.
+// Mantém clientes, peças e kits. Depois desta limpeza, novos eventos serão preservados normalmente.
+if(!localStorage.getItem('pm_v221_test_reservations_cleaned')){
+  db.reservations=[];
+  localStorage.setItem(key,JSON.stringify(db));
+  localStorage.setItem('pm_v221_test_reservations_cleaned','1');
+}
 function persist(){localStorage.setItem(key,JSON.stringify(db));render()}
 function formatDateBR(d){
   if(!d)return '-';
@@ -805,6 +812,7 @@ function renderCalendar(){
   const query=(document.getElementById('agendaSearch')?.value||'').toLowerCase().trim();
   const matches=r=>{
     const st=r.status||'Confirmada';
+    if(st==='Cancelada')return false;
     if(filter!=='Todos'&&st!==filter)return false;
     if(!query)return true;
     const c=db.clients.find(x=>x.id===r.clientId),k=db.kits.find(x=>x.id===r.kitId);
