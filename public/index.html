@@ -205,7 +205,7 @@
 
 <section id="acervo" class="page">
 <header><div><h1>Acervo</h1><div class="sub">Estoque central de peças</div></div><button class="btn primary" onclick="openItemModal()">+ Nova peça</button></header>
-<div class="panel"><table class="table"><thead><tr><th>Item</th><th>Total</th><th>Em uso/reservado</th><th>Disponível</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="itemTable"></tbody></table></div>
+<div class="panel"><table class="table"><thead><tr><th>Item</th><th>Total</th><th>Em uso/reservado</th><th>Disponível</th><th>Valor avulso</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="itemTable"></tbody></table></div>
 </section>
 
 <section id="kits" class="page">
@@ -318,6 +318,7 @@
 
 <div class="modal" id="item"><div class="modalbox"><h2 id="itemModalTitle">Nova peça do acervo</h2><div class="form">
 <div class="field"><label>Nome da peça</label><input id="iName" placeholder="Ex.: Cilindro branco"></div><div class="field"><label>Quantidade total</label><input id="iQty" type="number" min="1" value="1"></div>
+<div class="field"><label>Valor para locação avulsa</label><input id="iPrice" type="number" min="0" step="0.01" value="0" placeholder="Ex.: 35,00"></div>
 <div class="field full"><label>Observação</label><input id="iObs" placeholder="Ex.: em ótimo estado"></div>
 </div><div class="actions"><button class="btn light" onclick="closeModal('item')">Cancelar</button><button class="btn primary" id="saveItemBtn" onclick="saveItem()">Salvar</button></div></div></div>
 
@@ -567,12 +568,14 @@ function openItemModal(id=null){
     if(!item)return;
     document.getElementById('iName').value=item.name||'';
     document.getElementById('iQty').value=item.qty||1;
+    document.getElementById('iPrice').value=item.price||0;
     document.getElementById('iObs').value=item.obs||'';
     title.textContent='Editar peça do acervo';
     btn.textContent='Salvar alterações';
   }else{
     document.getElementById('iName').value='';
     document.getElementById('iQty').value=1;
+    document.getElementById('iPrice').value=0;
     document.getElementById('iObs').value='';
     title.textContent='Nova peça do acervo';
     btn.textContent='Salvar';
@@ -583,9 +586,11 @@ function openItemModal(id=null){
 function saveItem(){
   let name=document.getElementById('iName').value.trim();
   let qty=+document.getElementById('iQty').value;
+  let price=+document.getElementById('iPrice').value;
   if(!name||qty<1)return alert('Informe nome e quantidade.');
+  if(!Number.isFinite(price)||price<0)return alert('Informe um valor avulso válido.');
 
-  const data={name,qty,obs:document.getElementById('iObs').value.trim()};
+  const data={name,qty,price,obs:document.getElementById('iObs').value.trim()};
 
   if(editingItemId){
     const item=db.items.find(x=>x.id===editingItemId);
@@ -797,7 +802,7 @@ document.getElementById('finTotal').textContent=money(activeReservations.reduce(
 let rows=db.reservations.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{let c=db.clients.find(x=>x.id===r.clientId),k=db.kits.find(x=>x.id===r.kitId);let st=r.status||'Confirmada';let cls=st==='Confirmada'?'status-confirmada':st==='Pendente'?'status-pendente':st==='Cancelada'?'status-cancelada':'status-contrato';return `<tr><td>${new Date(r.date+'T12:00:00').toLocaleDateString('pt-BR')}</td><td>${c?.name||'-'}</td><td>${r.theme||'-'}</td><td>${k?.name||'-'}</td><td>${r.delivery?new Date(r.delivery+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${r.returnDate?new Date(r.returnDate+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${money(r.value)}</td><td><span class="badge ${cls}">${st==='Confirmada'?'🟢 ':st==='Pendente'?'🟡 ':st==='Cancelada'?'🔴 ':'🔵 '}${st}</span></td><td><button class="btn light" type="button" onclick="openReservationModal(${r.id})">✏️ Editar</button></td></tr>`}).join('')||'<tr><td colspan="8" class="muted">Nenhuma reserva cadastrada.</td></tr>';
 reservationTable.innerHTML=rows;dashReservations.innerHTML=rows||'<tr><td>Nenhuma reserva.</td></tr>';
 clientTable.innerHTML=db.clients.map(c=>`<tr><td>${c.name}</td><td>${c.phone||'-'}</td><td>${c.cpf||'-'}</td><td>${c.address||'-'}</td><td><button class="btn light" type="button" onclick="openClientModal(${c.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="openClientHistory(${c.id})">📋 Histórico</button></td></tr>`).join('');
-itemTable.innerHTML=db.items.map(i=>{let used=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada').reduce((s,r)=>s+((db.kits.find(k=>k.id===r.kitId)?.parts.find(p=>p.itemId===i.id)?.qty)||0),0);let avail=i.qty-used;return `<tr><td>${i.name}</td><td>${i.qty}</td><td>${used}</td><td><b>${avail}</b></td><td><span class="badge ${avail>0?'ok':'bad'}">${avail>0?'Disponível':'Indisponível'}</span></td><td><button class="btn light" type="button" onclick="openItemModal(${i.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="deleteItem(${i.id})">🗑️ Excluir</button></td></tr>`}).join('');
+itemTable.innerHTML=db.items.map(i=>{let used=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada').reduce((s,r)=>s+((db.kits.find(k=>k.id===r.kitId)?.parts.find(p=>p.itemId===i.id)?.qty)||0),0);let avail=i.qty-used;return `<tr><td>${i.name}</td><td>${i.qty}</td><td>${used}</td><td><b>${avail}</b></td><td>${money(i.price||0)}</td><td><span class="badge ${avail>0?'ok':'bad'}">${avail>0?'Disponível':'Indisponível'}</span></td><td><button class="btn light" type="button" onclick="openItemModal(${i.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="deleteItem(${i.id})">🗑️ Excluir</button></td></tr>`}).join('');
 kitList.innerHTML=db.kits.map(k=>`<div class="panel kit"><h3>🎀 ${k.name}</h3><div class="muted">${money(k.price)}</div><p>${k.parts.map(p=>{let i=db.items.find(x=>x.id===p.itemId);return `${p.qty}× ${i?.name||'item removido'}`}).join(' • ')}</p><div class="actions"><button class="btn light" type="button" onclick="openKitModal(${k.id})">✏️ Editar kit</button></div></div>`).join('');
 let alerts=[];db.items.forEach(i=>{if(i.qty<2)alerts.push(`⚠️ ${i.name}: estoque baixo.`)});alertsEl= document.getElementById('alerts');alertsEl.innerHTML=alerts.length?alerts.map(x=>`<div class="alert">${x}</div>`).join(''):'<div class="muted">Nenhum alerta.</div>';
 }
