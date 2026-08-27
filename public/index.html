@@ -742,11 +742,20 @@ function openClientHistory(id){
   const c=db.clients.find(x=>x.id===id);if(!c)return;
   const rs=db.reservations.filter(r=>r.clientId===id).slice().sort((a,b)=>b.date.localeCompare(a.date));
   const total=rs.reduce((s,r)=>s+(+r.value||0),0),paid=rs.reduce((s,r)=>s+(+r.paid||0),0);
+  const today=new Date();today.setHours(0,0,0,0);
+  const statusHistorico=r=>{
+    const st=r.status||'Confirmada';
+    if(st==='Cancelada')return 'Cancelada';
+    const d=new Date(r.date+'T12:00:00');d.setHours(0,0,0,0);
+    return d<today?'Realizada':'Próxima';
+  };
   const rows=rs.length?rs.map(r=>{
-    const k=db.kits.find(x=>x.id===r.kitId);
-    return `<tr><td>${formatDateBR(r.date)}</td><td>${r.theme||'-'}</td><td>${k?.name||'-'}</td><td>${money(r.value)}</td><td>${r.status||'Confirmada'}</td><td><button class="btn light" type="button" onclick="closeModal('clientHistory');openReservationDetails(${r.id})">Ver</button></td></tr>`;
-  }).join(''):'<tr><td colspan="6" class="muted">Nenhuma reserva encontrada.</td></tr>';
-  document.getElementById('clientHistoryContent').innerHTML=`<h3 style="color:var(--navy)">${c.name||'-'}</h3><div class="sub">${c.phone||'-'} • CPF: ${c.cpf||'-'}</div><div class="client-history-summary"><div class="client-history-card"><div class="label">Reservas</div><div class="value">${rs.length}</div></div><div class="client-history-card"><div class="label">Contratado</div><div class="value">${money(total)}</div></div><div class="client-history-card"><div class="label">Saldo</div><div class="value">${money(Math.max(0,total-paid))}</div></div></div><div class="tablewrap"><table><thead><tr><th>Evento</th><th>Tema</th><th>Kit</th><th>Valor</th><th>Status</th><th>Ação</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    const st=statusHistorico(r);
+    const cls=st==='Realizada'?'status-confirmada':st==='Cancelada'?'status-cancelada':st==='Próxima'?'status-pendente':'status-contrato';
+    const icon=st==='Realizada'?'✅ ':st==='Cancelada'?'🔴 ':'📅 ';
+    return `<tr><td>${formatDateBR(r.date)}</td><td>${r.theme||'-'}</td><td><span class="badge ${cls}">${icon}${st}</span></td></tr>`;
+  }).join(''):'<tr><td colspan="3" class="muted">Nenhuma festa encontrada.</td></tr>';
+  document.getElementById('clientHistoryContent').innerHTML=`<h3 style="color:var(--navy)">${c.name||'-'}</h3><div class="sub">${c.phone||'-'} • CPF: ${c.cpf||'-'}</div><div class="client-history-summary"><div class="client-history-card"><div class="label">Festas</div><div class="value">${rs.length}</div></div><div class="client-history-card"><div class="label">Contratado</div><div class="value">${money(total)}</div></div><div class="client-history-card"><div class="label">Saldo</div><div class="value">${money(Math.max(0,total-paid))}</div></div></div><div class="tablewrap"><table><thead><tr><th>Data da festa</th><th>Tema</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   document.getElementById('clientHistory').classList.add('show');
 }
 function renderDelivery(mode='entrega'){
