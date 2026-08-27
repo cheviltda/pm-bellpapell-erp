@@ -328,7 +328,9 @@
 </div><div class="actions"><button class="btn light" onclick="closeModal('kit')">Cancelar</button><button class="btn primary" id="saveKitBtn" onclick="saveKit()">Salvar</button></div></div></div>
 
 <div class="modal" id="reservation"><div class="modalbox"><h2 id="reservationModalTitle">Nova reserva</h2><div class="form">
-<div class="field"><label>Cliente</label><select id="rClient"></select></div><div class="field"><label>Kit</label><select id="rKit" onchange="checkReservation()"></select></div>
+<div class="field"><label>Cliente</label><select id="rClient"></select></div><div class="field"><label>Tipo de reserva</label><select id="rType" onchange="toggleReservationType()"><option value="kit">🎀 Kit</option><option value="avulso">📦 Peças avulsas</option></select></div>
+<div class="field" id="rKitField"><label>Kit</label><select id="rKit" onchange="checkReservation()"></select></div>
+<div class="field full" id="rAvulsoField" style="display:none"><label>Peças avulsas</label><div id="rAvulsoParts"></div><button class="btn light" type="button" onclick="addAvulsoPart()">+ Adicionar peça</button></div>
 <div class="field"><label>Data do evento</label><input id="rDate" type="date" onchange="checkReservation()"></div><div class="field"><label>Tema da festa</label><input id="rTheme" placeholder="Ex.: Jardim Encantado"></div>
 <div class="field"><label>Entrega</label><input id="rDelivery" type="date"></div><div class="field"><label>Devolução</label><input id="rReturn" type="date"></div>
 <div class="field"><label>Valor</label><input id="rValue" readonly></div>
@@ -681,9 +683,47 @@ function saveKit(){
   persist();
 }
 
-function reservedQty(itemId,date){return db.reservations.filter(r=>r.date===date&&r.status!=='Cancelada').reduce((sum,r)=>{let k=db.kits.find(x=>x.id===r.kitId);let p=k?.parts.find(x=>x.itemId===itemId);return sum+(p?p.qty:0)},0)}
-function checkReservation(){let kit=db.kits.find(k=>k.id==rKit.value),date=rDate.value;stockCheck.innerHTML='';if(!kit||!date){stockCheck.innerHTML='<div class="muted">Selecione o kit e a data.</div>';return false}rValue.value=kit.price;let problems=[];kit.parts.forEach(p=>{let item=db.items.find(i=>i.id===p.itemId),available=(item?.qty||0)-reservedQty(p.itemId,date);if(available<p.qty)problems.push(`${item.name}: precisa ${p.qty}, disponível ${available}`)});if(problems.length){stockCheck.innerHTML='<div class="danger"><b>🚨 Conflito de estoque</b><br>'+problems.join('<br>')+'</div>';return false}stockCheck.innerHTML='<div class="success">🟢 Estoque disponível para esta data.</div>';return true}
-function fillReservation(){rClient.innerHTML=db.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');rKit.innerHTML=db.kits.map(k=>`<option value="${k.id}">${k.name} • ${money(k.price)}</option>`).join('');rDate.value='';rTheme.value='';rDelivery.value='';rReturn.value='';rPaid.value=0;rValue.value='';rStatus.value='Confirmada';rObs.value='';stockCheck.innerHTML='<div class="muted">Selecione o kit e a data para verificar o estoque.</div>'}
+function reservedQty(itemId,date,ignoreId=null){return db.reservations.filter(r=>r.date===date&&r.status!=='Cancelada'&&r.id!==ignoreId).reduce((sum,r)=>{if(Array.isArray(r.avulsoParts)){const p=r.avulsoParts.find(x=>x.itemId===itemId);if(p)sum+=Number(p.qty)||0}const k=db.kits.find(x=>x.id===r.kitId);const kp=k?.parts.find(x=>x.itemId===itemId);return sum+(kp?Number(kp.qty)||0:0)},0)}
+function toggleReservationType(){
+  const type=document.getElementById('rType')?.value||'kit';
+  const kitField=document.getElementById('rKitField'),avulsoField=document.getElementById('rAvulsoField');
+  if(kitField)kitField.style.display=type==='kit'?'':'none';
+  if(avulsoField)avulsoField.style.display=type==='avulso'?'block':'none';
+  if(type==='avulso'&&!document.querySelector('#rAvulsoParts .avulso-line')) addAvulsoPart();
+  checkReservation();
+}
+function addAvulsoPart(itemId='',qty=1){
+  const box=document.getElementById('rAvulsoParts');if(!box)return;
+  const line=document.createElement('div');line.className='avulso-line';line.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) 90px auto;gap:8px;align-items:center;margin-bottom:8px';
+  line.innerHTML='<select class="avulso-item" onchange="checkReservation()"><option value="">Selecione a peça</option>'+db.items.map(i=>'<option value="'+i.id+'">'+i.name+' • '+money(i.price||0)+'</option>').join('')+'</select><input class="avulso-qty" type="number" min="1" step="1" value="'+Math.max(1,Number(qty)||1)+'" onchange="checkReservation()" oninput="checkReservation()"><button class="btn light" type="button" onclick="this.parentElement.remove();checkReservation()">✕</button>';
+  box.appendChild(line);
+  if(itemId)line.querySelector('.avulso-item').value=itemId;
+  checkReservation();
+}
+function getAvulsoParts(){
+  return Array.from(document.querySelectorAll('#rAvulsoParts .avulso-line')).map(line=>({itemId:+line.querySelector('.avulso-item').value,qty:+line.querySelector('.avulso-qty').value})).filter(x=>x.itemId&&x.qty>0);
+}
+function checkReservation(){
+  const type=document.getElementById('rType')?.value||'kit',date=document.getElementById('rDate').value,stock=document.getElementById('stockCheck');
+  stock.innerHTML='';
+  if(!date){stock.innerHTML='<div class="muted">Selecione a data do evento para verificar o estoque.</div>';return false}
+  if(type==='kit'){
+    const kit=db.kits.find(k=>k.id==rKit.value);
+    if(!kit){stock.innerHTML='<div class="muted">Selecione o kit.</div>';return false}
+    rValue.value=kit.price;
+    const problems=[];kit.parts.forEach(p=>{const item=db.items.find(i=>i.id===p.itemId),available=(item?.qty||0)-reservedQty(p.itemId,date,editingReservationId);if(available<p.qty)problems.push(`${item?.name||'Peça'}: precisa ${p.qty}, disponível ${available}`)});
+    if(problems.length){stock.innerHTML='<div class="danger"><b>🚨 Conflito de estoque</b><br>'+problems.join('<br>')+'</div>';return false}
+    stock.innerHTML='<div class="success">🟢 Estoque disponível para esta data.</div>';return true;
+  }
+  const parts=getAvulsoParts();
+  if(!parts.length){rValue.value='';stock.innerHTML='<div class="muted">Adicione pelo menos uma peça avulsa.</div>';return false}
+  const grouped={};parts.forEach(p=>grouped[p.itemId]=(grouped[p.itemId]||0)+p.qty);
+  let total=0,problems=[];Object.entries(grouped).forEach(([id,qty])=>{const item=db.items.find(i=>i.id==id),available=(item?.qty||0)-reservedQty(+id,date,editingReservationId);total+=(item?.price||0)*qty;if(available<qty)problems.push(`${item?.name||'Peça'}: precisa ${qty}, disponível ${available}`)});
+  rValue.value=total.toFixed(2);
+  if(problems.length){stock.innerHTML='<div class="danger"><b>🚨 Conflito de estoque</b><br>'+problems.join('<br>')+'</div>';return false}
+  stock.innerHTML='<div class="success">🟢 '+parts.length+' peça(s) selecionada(s). Total: <b>'+money(total)+'</b></div>';return true;
+}
+function fillReservation(){rClient.innerHTML=db.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');rKit.innerHTML=db.kits.map(k=>`<option value="${k.id}">${k.name} • ${money(k.price)}</option>`).join('');rDate.value='';rTheme.value='';rDelivery.value='';rReturn.value='';rPaid.value=0;rValue.value='';rStatus.value='Confirmada';rObs.value='';rType.value='kit';rAvulsoParts.innerHTML='';toggleReservationType();stockCheck.innerHTML='<div class="muted">Selecione o kit e a data para verificar o estoque.</div>'}
 let editingReservationId=null;
 
 function openReservationModal(id=null){
@@ -694,6 +734,7 @@ function openReservationModal(id=null){
   if(id){
     const r=db.reservations.find(x=>x.id===id); if(!r)return;
     document.getElementById('rClient').value=r.clientId||'';
+    document.getElementById('rType').value=Array.isArray(r.avulsoParts)?'avulso':'kit';
     document.getElementById('rKit').value=r.kitId||'';
     document.getElementById('rDate').value=r.date||'';
     document.getElementById('rTheme').value=r.theme||'';
@@ -702,9 +743,10 @@ function openReservationModal(id=null){
     document.getElementById('rPaid').value=r.paid||0;
     document.getElementById('rStatus').value=r.status||'Confirmada';
     document.getElementById('rObs').value=r.obs||'';
+    if(Array.isArray(r.avulsoParts)){rAvulsoParts.innerHTML='';r.avulsoParts.forEach(p=>addAvulsoPart(p.itemId,p.qty));}
     title.textContent='Editar reserva'; btn.textContent='Salvar alterações';
     document.getElementById('reservation').classList.add('show');
-    checkReservation();
+    toggleReservationType();checkReservation();
   }else{
     title.textContent='Nova reserva'; btn.textContent='Salvar';
     openModal('reservation');
@@ -713,21 +755,23 @@ function openReservationModal(id=null){
 
 function saveReservation(){
   const clientId=+document.getElementById('rClient').value;
-  const kitId=+document.getElementById('rKit').value;
+  const type=document.getElementById('rType').value;
+  const kitId=type==='kit'?+document.getElementById('rKit').value:null;
   const date=document.getElementById('rDate').value;
-  const kit=db.kits.find(k=>k.id===kitId);
-  if(!clientId||!kitId||!date)return alert('Preencha cliente, kit e data do evento.');
+  const kit=kitId?db.kits.find(k=>k.id===kitId):null;
+  const avulsoParts=type==='avulso'?getAvulsoParts():[];
+  if(!clientId||!date)return alert('Preencha cliente e data do evento.');
+  if(type==='kit'&&!kitId)return alert('Selecione o kit.');
+  if(type==='avulso'&&!avulsoParts.length)return alert('Adicione pelo menos uma peça avulsa.');
+  if(!checkReservation())return alert('Há conflito de estoque ou faltam informações na reserva.');
   const data={clientId,kitId,date,theme:document.getElementById('rTheme').value.trim(),
     delivery:document.getElementById('rDelivery').value,returnDate:document.getElementById('rReturn').value,
-    value:kit?kit.price:(+document.getElementById('rValue').value||0),paid:+document.getElementById('rPaid').value||0,
+    value:+document.getElementById('rValue').value||0,paid:+document.getElementById('rPaid').value||0,
     obs:document.getElementById('rObs').value.trim(),status:document.getElementById('rStatus').value||'Confirmada'};
-  if(editingReservationId){
-    const r=db.reservations.find(x=>x.id===editingReservationId); if(r)Object.assign(r,data);
-  }else db.reservations.push({id:Date.now(),...data});
-  editingReservationId=null; closeModal('reservation'); persist(); renderCalendar();
+  if(type==='avulso')data.avulsoParts=avulsoParts;else delete data.avulsoParts;
+  if(editingReservationId){const r=db.reservations.find(x=>x.id===editingReservationId);if(r)Object.assign(r,data);}else db.reservations.push({id:Date.now(),...data});
+  editingReservationId=null;closeModal('reservation');persist();renderCalendar();render();
 }
-
-
 
 let editingClientId=null;
 function openClientModal(id=null){
@@ -799,10 +843,10 @@ function render(){
 document.getElementById('kpiRes').textContent=db.reservations.length;document.getElementById('kpiCli').textContent=db.clients.length;document.getElementById('kpiItens').textContent=db.items.length;
 let activeReservations=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada');let due=activeReservations.reduce((s,r)=>s+r.value-r.paid,0);document.getElementById('kpiReceber').textContent=money(due);
 document.getElementById('finTotal').textContent=money(activeReservations.reduce((s,r)=>s+r.value,0));document.getElementById('finPaid').textContent=money(activeReservations.reduce((s,r)=>s+r.paid,0));document.getElementById('finDue').textContent=money(due);
-let rows=db.reservations.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{let c=db.clients.find(x=>x.id===r.clientId),k=db.kits.find(x=>x.id===r.kitId);let st=r.status||'Confirmada';let cls=st==='Confirmada'?'status-confirmada':st==='Pendente'?'status-pendente':st==='Cancelada'?'status-cancelada':'status-contrato';return `<tr><td>${new Date(r.date+'T12:00:00').toLocaleDateString('pt-BR')}</td><td>${c?.name||'-'}</td><td>${r.theme||'-'}</td><td>${k?.name||'-'}</td><td>${r.delivery?new Date(r.delivery+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${r.returnDate?new Date(r.returnDate+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${money(r.value)}</td><td><span class="badge ${cls}">${st==='Confirmada'?'🟢 ':st==='Pendente'?'🟡 ':st==='Cancelada'?'🔴 ':'🔵 '}${st}</span></td><td><button class="btn light" type="button" onclick="openReservationModal(${r.id})">✏️ Editar</button></td></tr>`}).join('')||'<tr><td colspan="8" class="muted">Nenhuma reserva cadastrada.</td></tr>';
+let rows=db.reservations.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{let c=db.clients.find(x=>x.id===r.clientId),k=db.kits.find(x=>x.id===r.kitId);let st=r.status||'Confirmada';let cls=st==='Confirmada'?'status-confirmada':st==='Pendente'?'status-pendente':st==='Cancelada'?'status-cancelada':'status-contrato';return `<tr><td>${new Date(r.date+'T12:00:00').toLocaleDateString('pt-BR')}</td><td>${c?.name||'-'}</td><td>${r.theme||'-'}</td><td>${Array.isArray(r.avulsoParts)?'Peças avulsas':(k?.name||'-')}</td><td>${r.delivery?new Date(r.delivery+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${r.returnDate?new Date(r.returnDate+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${money(r.value)}</td><td><span class="badge ${cls}">${st==='Confirmada'?'🟢 ':st==='Pendente'?'🟡 ':st==='Cancelada'?'🔴 ':'🔵 '}${st}</span></td><td><button class="btn light" type="button" onclick="openReservationModal(${r.id})">✏️ Editar</button></td></tr>`}).join('')||'<tr><td colspan="8" class="muted">Nenhuma reserva cadastrada.</td></tr>';
 reservationTable.innerHTML=rows;dashReservations.innerHTML=rows||'<tr><td>Nenhuma reserva.</td></tr>';
 clientTable.innerHTML=db.clients.map(c=>`<tr><td>${c.name}</td><td>${c.phone||'-'}</td><td>${c.cpf||'-'}</td><td>${c.address||'-'}</td><td><button class="btn light" type="button" onclick="openClientModal(${c.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="openClientHistory(${c.id})">📋 Histórico</button></td></tr>`).join('');
-itemTable.innerHTML=db.items.map(i=>{let used=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada').reduce((s,r)=>s+((db.kits.find(k=>k.id===r.kitId)?.parts.find(p=>p.itemId===i.id)?.qty)||0),0);let avail=i.qty-used;return `<tr><td>${i.name}</td><td>${i.qty}</td><td>${used}</td><td><b>${avail}</b></td><td>${money(i.price||0)}</td><td><span class="badge ${avail>0?'ok':'bad'}">${avail>0?'Disponível':'Indisponível'}</span></td><td><button class="btn light" type="button" onclick="openItemModal(${i.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="deleteItem(${i.id})">🗑️ Excluir</button></td></tr>`}).join('');
+itemTable.innerHTML=db.items.map(i=>{let used=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada').reduce((s,r)=>{let kitQty=(db.kits.find(k=>k.id===r.kitId)?.parts.find(p=>p.itemId===i.id)?.qty)||0;let avQty=Array.isArray(r.avulsoParts)?((r.avulsoParts.find(p=>p.itemId===i.id)?.qty)||0):0;return s+kitQty+avQty},0);let avail=i.qty-used;return `<tr><td>${i.name}</td><td>${i.qty}</td><td>${used}</td><td><b>${avail}</b></td><td>${money(i.price||0)}</td><td><span class="badge ${avail>0?'ok':'bad'}">${avail>0?'Disponível':'Indisponível'}</span></td><td><button class="btn light" type="button" onclick="openItemModal(${i.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="deleteItem(${i.id})">🗑️ Excluir</button></td></tr>`}).join('');
 kitList.innerHTML=db.kits.map(k=>`<div class="panel kit"><h3>🎀 ${k.name}</h3><div class="muted">${money(k.price)}</div><p>${k.parts.map(p=>{let i=db.items.find(x=>x.id===p.itemId);return `${p.qty}× ${i?.name||'item removido'}`}).join(' • ')}</p><div class="actions"><button class="btn light" type="button" onclick="openKitModal(${k.id})">✏️ Editar kit</button></div></div>`).join('');
 let alerts=[];db.items.forEach(i=>{if(i.qty<2)alerts.push(`⚠️ ${i.name}: estoque baixo.`)});alertsEl= document.getElementById('alerts');alertsEl.innerHTML=alerts.length?alerts.map(x=>`<div class="alert">${x}</div>`).join(''):'<div class="muted">Nenhum alerta.</div>';
 }
@@ -830,7 +874,7 @@ function renderCalendar(){
     if(filter!=='Todos'&&st!==filter)return false;
     if(!query)return true;
     const c=db.clients.find(x=>x.id===r.clientId),k=db.kits.find(x=>x.id===r.kitId);
-    return ((c?.name||'')+' '+(r.theme||'')+' '+(k?.name||'')).toLowerCase().includes(query);
+    return ((c?.name||'')+' '+(r.theme||'')+' '+(k?.name||'')+' '+(Array.isArray(r.avulsoParts)?'Peças avulsas':'')).toLowerCase().includes(query);
   };
   const startDay=(new Date(y,m,1).getDay()+6)%7,total=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate();
   const weekdays=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
@@ -845,7 +889,7 @@ function renderCalendar(){
     const rs=db.reservations.filter(r=>r.date===iso&&matches(r));
     const events=rs.map(r=>{
       const c=db.clients.find(x=>x.id===r.clientId),k=db.kits.find(x=>x.id===r.kitId),st=r.status||'Confirmada';
-      const label=(c?.name||'Cliente')+' • '+(r.theme||k?.name||'Reserva');
+      const label=(c?.name||'Cliente')+' • '+(r.theme||k?.name||(Array.isArray(r.avulsoParts)?'Peças avulsas':'Reserva'));
       return '<div class="cal-event '+statusClass(st)+'" onclick="event.stopPropagation();openReservationDetails('+r.id+')">'+label+'</div>';
     }).join('');
     out.push('<div class="cal-day '+(other?'other ':'')+(dt.getTime()===today.getTime()?'today':'')+'" onclick="newReservationFor(\''+iso+'\')"><div class="cal-num">'+dt.getDate()+'</div>'+events+'</div>');
@@ -889,11 +933,12 @@ function openReservationDetails(id){
     '<div><span class="label">WhatsApp</span><strong>'+(c.phone||'-')+'</strong></div>'+
     '<div><span class="label">CPF</span><strong>'+(c.cpf||'-')+'</strong></div>'+
     '<div><span class="label">Tema</span><strong>'+(r.theme||'-')+'</strong></div>'+
-    '<div><span class="label">Kit</span><strong>'+(k.name||'-')+'</strong></div>'+
+    '<div><span class="label">Kit</span><strong>'+(Array.isArray(r.avulsoParts)?'Peças avulsas':(k.name||'-'))+'</strong></div>'+
     '<div><span class="label">Evento</span><strong>'+fmt(r.date)+'</strong></div>'+
     '<div><span class="label">Entrega</span><strong>'+fmt(r.delivery)+'</strong></div>'+
     '<div><span class="label">Devolução</span><strong>'+fmt(r.returnDate)+'</strong></div>'+
     '<div><span class="label">Status</span><strong>'+st+'</strong></div>'+
+    (Array.isArray(r.avulsoParts)?'<div class="full"><span class="label">Peças avulsas</span><strong>'+r.avulsoParts.map(p=>{const i=db.items.find(x=>x.id===p.itemId);return (p.qty||0)+'× '+(i?.name||'Peça')+' • '+money((i?.price||0)*(p.qty||0))}).join('<br>')+'</strong></div>':'')+
     '<div><span class="label">Valor</span><strong>'+money(r.value)+'</strong></div>'+
     '<div><span class="label">Entrada</span><strong>'+money(r.paid)+'</strong></div>'+
     '<div><span class="label">Saldo</span><strong>'+money(saldo)+'</strong></div>'+
@@ -1119,7 +1164,7 @@ function generateContract(id){
   currentContractReservationId=id;
   const statusReservation=db.reservations.find(x=>x.id===id);if(statusReservation&&statusReservation.status==='Confirmada'){statusReservation.status='Contrato gerado';persist();renderCalendar();if(typeof renderFinance==='function')renderFinance();}
   const c=db.clients.find(x=>x.id===r.clientId)||{};
-  const k=db.kits.find(x=>x.id===r.kitId)||{};
+  const k=db.kits.find(x=>x.id===r.kitId)||{};const isAvulso=Array.isArray(r.avulsoParts);const avulsoLabel=isAvulso?'Peças avulsas':(k.name||'-');
   const saldo=Math.max(0,(+r.value||0)-(+r.paid||0));
   const today=new Date().toLocaleDateString('pt-BR');
   const logo=document.querySelector('.real-logo img')?.src||'';
@@ -1137,8 +1182,8 @@ function generateContract(id){
   '<p><b>CONTRATANTE:</b> '+esc(c.name)+'</p>'+
   '<div class="contract-data"><b>CPF:</b> '+esc(c.cpf)+'<br><b>Endereço:</b> '+esc(c.address)+'<br><b>WhatsApp:</b> '+esc(c.phone)+'<br><b>E-mail:</b> '+esc(c.email)+'</div>'+
   '<h4>2. OBJETO DA LOCAÇÃO</h4>'+
-  '<p>A LOCADORA disponibilizará à CONTRATANTE o conjunto de peças e itens de decoração correspondente ao kit contratado, conforme os dados da reserva abaixo.</p>'+
-  '<div class="contract-data"><b>Tema:</b> '+esc(r.theme)+'<br><b>Kit:</b> '+esc(k.name)+'<br><b>Data do evento:</b> '+formatDateBR(r.date)+'<br><b>Entrega/retirada:</b> '+formatDateBR(r.delivery)+'<br><b>Devolução:</b> '+formatDateBR(r.returnDate)+'</div>'+
+  '<p>A LOCADORA disponibilizará à CONTRATANTE o conjunto de peças e itens de decoração correspondente ao kit ou às peças avulsas contratadas, conforme os dados da reserva abaixo.</p>'+
+  '<div class="contract-data"><b>Tema:</b> '+esc(r.theme)+'<br><b>Kit:</b> '+esc(avulsoLabel)+'<br><b>Data do evento:</b> '+formatDateBR(r.date)+'<br><b>Entrega/retirada:</b> '+formatDateBR(r.delivery)+'<br><b>Devolução:</b> '+formatDateBR(r.returnDate)+'</div>'+
   '<h4>3. VALORES E PAGAMENTO</h4>'+
   '<p>Valor total da locação: <b>'+moneySafe(r.value)+'</b>.</p>'+
   '<p>Valor já recebido: <b>'+moneySafe(r.paid)+'</b>. Saldo restante: <b>'+moneySafe(saldo)+'</b>.</p>'+
