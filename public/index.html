@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!-- P&M Bellpapell ERP V22.1 - TESTE BASE PUBLIC + MULTIPLAS LOCACOES -->
+
 <html lang="pt-BR">
 <head>
 <link rel="manifest" href="/manifest.json">
@@ -328,15 +330,14 @@
 </div><div class="actions"><button class="btn light" onclick="closeModal('kit')">Cancelar</button><button class="btn primary" id="saveKitBtn" onclick="saveKit()">Salvar</button></div></div></div>
 
 <div class="modal" id="reservation"><div class="modalbox"><h2 id="reservationModalTitle">Nova reserva</h2><div class="form">
-<div class="field"><label>Cliente</label><select id="rClient"></select></div><div class="field"><label>Tipo de reserva</label><select id="rType" onchange="toggleReservationType()"><option value="kit">🎀 Kit</option><option value="avulso">📦 Peças avulsas</option></select></div>
-<div class="field" id="rKitField"><label>Kit</label><select id="rKit" onchange="checkReservation()"></select></div>
-<div class="field full" id="rAvulsoField" style="display:none"><label>Peças avulsas</label><div id="rAvulsoParts"></div><button class="btn light" type="button" onclick="addAvulsoPart()">+ Adicionar peça</button></div>
+<div class="field full"><label>Cliente</label><select id="rClient" onchange="updateReservationClientInfo()"></select><div id="reservationClientInfo" class="muted" style="margin-top:7px"></div></div>
+<div class="field full"><label>Locações desta reserva</label><div id="reservationLines"></div><button class="btn light" type="button" onclick="addReservationLine()">➕ Adicionar locação</button><div class="muted" style="margin-top:7px">Você pode combinar Kit, Kit Festa na Mesa e Peças avulsas na mesma reserva.</div></div>
 <div class="field"><label>Data do evento</label><input id="rDate" type="date" onchange="checkReservation()"></div><div class="field"><label>Tema da festa</label><input id="rTheme" placeholder="Ex.: Jardim Encantado"></div>
 <div class="field"><label>Entrega</label><input id="rDelivery" type="date"></div><div class="field"><label>Devolução</label><input id="rReturn" type="date"></div>
 <div class="field"><label>Valor</label><input id="rValue" readonly></div>
 <div class="field"><label>Entrada recebida</label><input id="rPaid" type="number" step=".01" value="0"></div><div class="field"><label>Status</label><select id="rStatus"><option value="Confirmada">🟢 Confirmada</option><option value="Pendente">🟡 Pendente</option><option value="Cancelada">🔴 Cancelada</option><option value="Contrato gerado">🔵 Contrato gerado</option></select></div><div class="field full"><label>Observação</label><input id="rObs"></div>
-<div class="field full" id="stockCheck"><div class="muted">Selecione o kit e a data para verificar o estoque.</div></div>
-</div><div class="actions"><button class="btn light" onclick="closeModal('reservation')">Cancelar</button><button class="btn primary" id="saveReservationBtn" onclick="saveReservation()">Confirmar reserva</button></div></div></div>
+<div class="field full" id="stockCheck"><div class="muted">Selecione a data do evento para verificar o estoque.</div></div>
+</div><div class="actions"><button class="btn light" type="button" onclick="closeModal('reservation')">Cancelar</button><button class="btn light" type="button" id="deleteReservationBtn" style="display:none;color:#a23e48;border-color:#e6c5c9" onclick="deleteReservation(editingReservationId)">🗑️ Excluir reserva</button><button class="btn primary" type="button" id="saveReservationBtn" onclick="saveReservation()">Confirmar reserva</button></div></div></div>
 
 <div class="modal" id="reservationDetails"><div class="modalbox"><h2>Detalhes da reserva</h2><div id="reservationDetailsContent"></div><div class="actions"><button class="btn light" onclick="closeModal('reservationDetails')">Fechar</button><button class="btn primary" id="editReservationBtn">✏️ Editar reserva</button><button class="btn light" id="generateContractBtn">📄 Gerar contrato</button></div></div></div>
 <div class="modal" id="financeEntry"><div class="modalbox">
@@ -397,13 +398,6 @@ kits:[
 ],
 reservations:[]
 };
-// V22.1: limpeza única das reservas de teste usadas durante a configuração.
-// Mantém clientes, peças e kits. Depois desta limpeza, novos eventos serão preservados normalmente.
-if(!localStorage.getItem('pm_v221_test_reservations_cleaned')){
-  db.reservations=[];
-  localStorage.setItem(key,JSON.stringify(db));
-  localStorage.setItem('pm_v221_test_reservations_cleaned','1');
-}
 function persist(){localStorage.setItem(key,JSON.stringify(db));render()}
 function formatDateBR(d){
   if(!d)return '-';
@@ -683,94 +677,141 @@ function saveKit(){
   persist();
 }
 
-function reservedQty(itemId,date,ignoreId=null){return db.reservations.filter(r=>r.date===date&&r.status!=='Cancelada'&&r.id!==ignoreId).reduce((sum,r)=>{if(Array.isArray(r.avulsoParts)){const p=r.avulsoParts.find(x=>x.itemId===itemId);if(p)sum+=Number(p.qty)||0}const k=db.kits.find(x=>x.id===r.kitId);const kp=k?.parts.find(x=>x.itemId===itemId);return sum+(kp?Number(kp.qty)||0:0)},0)}
-function toggleReservationType(){
-  const type=document.getElementById('rType')?.value||'kit';
-  const kitField=document.getElementById('rKitField'),avulsoField=document.getElementById('rAvulsoField');
-  if(kitField)kitField.style.display=type==='kit'?'':'none';
-  if(avulsoField)avulsoField.style.display=type==='avulso'?'block':'none';
-  if(type==='avulso'&&!document.querySelector('#rAvulsoParts .avulso-line')) addAvulsoPart();
-  checkReservation();
+function getReservationLines(r){
+  if(Array.isArray(r?.lines)&&r.lines.length)return r.lines;
+  const lines=[];
+  if(r?.kitId)lines.push({type:'kit',kitId:r.kitId});
+  if(Array.isArray(r?.avulsoParts)&&r.avulsoParts.length)lines.push({type:'avulso',parts:r.avulsoParts.map(p=>({itemId:+p.itemId,qty:+p.qty||1}))});
+  return lines.length?lines:[{type:'kit',kitId:''}];
 }
-function addAvulsoPart(itemId='',qty=1){
-  const box=document.getElementById('rAvulsoParts');if(!box)return;
-  const line=document.createElement('div');line.className='avulso-line';line.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) 90px auto;gap:8px;align-items:center;margin-bottom:8px';
-  line.innerHTML='<select class="avulso-item" onchange="checkReservation()"><option value="">Selecione a peça</option>'+db.items.map(i=>'<option value="'+i.id+'">'+i.name+' • '+money(i.price||0)+'</option>').join('')+'</select><input class="avulso-qty" type="number" min="1" step="1" value="'+Math.max(1,Number(qty)||1)+'" onchange="checkReservation()" oninput="checkReservation()"><button class="btn light" type="button" onclick="this.parentElement.remove();checkReservation()">✕</button>';
-  box.appendChild(line);
-  if(itemId)line.querySelector('.avulso-item').value=itemId;
-  checkReservation();
+function lineLabel(line){
+  if(!line)return '-';
+  if(line.type==='avulso')return '📦 Peças avulsas';
+  const k=db.kits.find(x=>x.id==line.kitId);
+  return line.type==='mesa'?'🎉 '+(k?.name||'Kit Festa na Mesa'):'🎀 '+(k?.name||'Kit');
 }
-function getAvulsoParts(){
-  return Array.from(document.querySelectorAll('#rAvulsoParts .avulso-line')).map(line=>({itemId:+line.querySelector('.avulso-item').value,qty:+line.querySelector('.avulso-qty').value})).filter(x=>x.itemId&&x.qty>0);
+function linesSummary(r){return getReservationLines(r).map(line=>lineLabel(line)).join(' + ')||'-'}
+function reservedQty(itemId,date,ignoreId=null){
+  return db.reservations.filter(r=>r.date===date&&r.status!=='Cancelada'&&r.id!==ignoreId).reduce((sum,r)=>{
+    getReservationLines(r).forEach(line=>{
+      if(line.type==='avulso'){
+        (line.parts||[]).forEach(p=>{if(+p.itemId===+itemId)sum+=Number(p.qty)||0});
+      }else{
+        const k=db.kits.find(x=>x.id==line.kitId);
+        (k?.parts||[]).forEach(p=>{if(+p.itemId===+itemId)sum+=Number(p.qty)||0});
+      }
+    });
+    return sum;
+  },0)
+}
+function renderReservationLine(line={},index=0){
+  const type=line.type||'kit';
+  const wrap=document.createElement('div');wrap.className='reservation-line';wrap.style.cssText='border:1px solid #eadfe4;border-radius:12px;padding:10px;margin-bottom:10px;background:#fff';
+  wrap.innerHTML='<div style="display:grid;grid-template-columns:minmax(150px,1fr) minmax(180px,2fr) auto;gap:8px;align-items:end"><div><label style="font-size:12px">Tipo</label><select class="reservation-line-type" onchange="changeReservationLineType(this)"><option value="kit">🎀 Kit</option><option value="mesa">🎉 Kit Festa na Mesa</option><option value="avulso">📦 Peças avulsas</option></select></div><div class="reservation-line-selector"></div><button class="btn light" type="button" onclick="removeReservationLine(this)" title="Remover locação">✕</button></div><div class="reservation-line-parts" style="margin-top:8px"></div>';
+  wrap.querySelector('.reservation-line-type').value=type;
+  document.getElementById('reservationLines').appendChild(wrap);
+  setupReservationLine(wrap,line);
+}
+function setupReservationLine(wrap,line={}){
+  const type=wrap.querySelector('.reservation-line-type').value,sel=wrap.querySelector('.reservation-line-selector'),partsBox=wrap.querySelector('.reservation-line-parts');
+  if(type==='avulso'){
+    sel.innerHTML='<div class="muted" style="font-size:12px">Adicione as peças desta locação.</div><button class="btn light" type="button" onclick="addReservationPart(this)">+ Adicionar peça</button>';
+    partsBox.innerHTML='';(line.parts||[]).forEach(p=>addReservationPart(wrap.querySelector('.reservation-line-parts'),p.itemId,p.qty));
+    if(!(line.parts||[]).length)addReservationPart(wrap.querySelector('.reservation-line-parts'));
+  }else{
+    const label=type==='mesa'?'Kit Festa na Mesa':'Kit';
+    sel.innerHTML='<label style="font-size:12px">'+label+'</label><select class="reservation-line-kit" onchange="checkReservation()"><option value="">Selecione o kit</option>'+db.kits.map(k=>'<option value="'+k.id+'">'+k.name+' • '+money(k.price||0)+'</option>').join('')+'</select>';
+    partsBox.innerHTML='';
+    if(line.kitId)sel.querySelector('select').value=line.kitId;
+  }
+}
+function addReservationLine(line={type:'kit',kitId:''}){renderReservationLine(line);checkReservation()}
+function changeReservationLineType(select){
+  const wrap=select.closest('.reservation-line');setupReservationLine(wrap,{type:select.value});checkReservation();
+}
+function removeReservationLine(btn){
+  const box=document.getElementById('reservationLines'),line=btn.closest('.reservation-line');
+  if(box.querySelectorAll('.reservation-line').length<=1)return;
+  line.remove();checkReservation();
+}
+function addReservationPart(target,itemId='',qty=1){
+  const box=target?.classList?.contains('reservation-line-parts')?target:target?.closest('.reservation-line')?.querySelector('.reservation-line-parts');if(!box)return;
+  const line=document.createElement('div');line.className='reservation-part';line.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) 80px auto;gap:8px;align-items:center;margin-bottom:7px';
+  line.innerHTML='<select class="reservation-part-item" onchange="checkReservation()"><option value="">Selecione a peça</option>'+db.items.map(i=>'<option value="'+i.id+'">'+i.name+' • '+money(i.price||0)+'</option>').join('')+'</select><input class="reservation-part-qty" type="number" min="1" step="1" value="'+Math.max(1,Number(qty)||1)+'" onchange="checkReservation()" oninput="checkReservation()"><button class="btn light" type="button" onclick="this.parentElement.remove();checkReservation()">✕</button>';
+  box.appendChild(line);if(itemId)line.querySelector('.reservation-part-item').value=itemId;checkReservation();
+}
+function getReservationLinesFromForm(){
+  return Array.from(document.querySelectorAll('#reservationLines .reservation-line')).map(wrap=>{
+    const type=wrap.querySelector('.reservation-line-type').value;
+    if(type==='avulso')return {type:'avulso',parts:Array.from(wrap.querySelectorAll('.reservation-part')).map(line=>({itemId:+line.querySelector('.reservation-part-item').value,qty:+line.querySelector('.reservation-part-qty').value})).filter(x=>x.itemId&&x.qty>0)};
+    return {type,kitId:+(wrap.querySelector('.reservation-line-kit')?.value||0)};
+  });
 }
 function checkReservation(){
-  const type=document.getElementById('rType')?.value||'kit',date=document.getElementById('rDate').value,stock=document.getElementById('stockCheck');
-  stock.innerHTML='';
+  const date=document.getElementById('rDate').value,stock=document.getElementById('stockCheck');stock.innerHTML='';
   if(!date){stock.innerHTML='<div class="muted">Selecione a data do evento para verificar o estoque.</div>';return false}
-  if(type==='kit'){
-    const kit=db.kits.find(k=>k.id==rKit.value);
-    if(!kit){stock.innerHTML='<div class="muted">Selecione o kit.</div>';return false}
-    rValue.value=kit.price;
-    const problems=[];kit.parts.forEach(p=>{const item=db.items.find(i=>i.id===p.itemId),available=(item?.qty||0)-reservedQty(p.itemId,date,editingReservationId);if(available<p.qty)problems.push(`${item?.name||'Peça'}: precisa ${p.qty}, disponível ${available}`)});
-    if(problems.length){stock.innerHTML='<div class="danger"><b>🚨 Conflito de estoque</b><br>'+problems.join('<br>')+'</div>';return false}
-    stock.innerHTML='<div class="success">🟢 Estoque disponível para esta data.</div>';return true;
-  }
-  const parts=getAvulsoParts();
-  if(!parts.length){rValue.value='';stock.innerHTML='<div class="muted">Adicione pelo menos uma peça avulsa.</div>';return false}
-  const grouped={};parts.forEach(p=>grouped[p.itemId]=(grouped[p.itemId]||0)+p.qty);
-  let total=0,problems=[];Object.entries(grouped).forEach(([id,qty])=>{const item=db.items.find(i=>i.id==id),available=(item?.qty||0)-reservedQty(+id,date,editingReservationId);total+=(item?.price||0)*qty;if(available<qty)problems.push(`${item?.name||'Peça'}: precisa ${qty}, disponível ${available}`)});
-  rValue.value=total.toFixed(2);
-  if(problems.length){stock.innerHTML='<div class="danger"><b>🚨 Conflito de estoque</b><br>'+problems.join('<br>')+'</div>';return false}
-  stock.innerHTML='<div class="success">🟢 '+parts.length+' peça(s) selecionada(s). Total: <b>'+money(total)+'</b></div>';return true;
+  const lines=getReservationLinesFromForm();if(!lines.length){stock.innerHTML='<div class="muted">Adicione pelo menos uma locação.</div>';return false}
+  const grouped={},problems=[];let total=0,valid=true;
+  lines.forEach((line,idx)=>{
+    if(line.type==='avulso'){
+      if(!line.parts.length){valid=false;problems.push('Locação '+(idx+1)+': adicione pelo menos uma peça avulsa.');return}
+      line.parts.forEach(p=>{grouped[p.itemId]=(grouped[p.itemId]||0)+p.qty;const item=db.items.find(i=>i.id==p.itemId);total+=(item?.price||0)*p.qty});
+    }else{
+      if(!line.kitId){valid=false;problems.push('Locação '+(idx+1)+': selecione o kit.');return}
+      const k=db.kits.find(x=>x.id==line.kitId);if(!k){valid=false;problems.push('Locação '+(idx+1)+': kit não encontrado.');return}
+      total+=+k.price||0;(k.parts||[]).forEach(p=>grouped[p.itemId]=(grouped[p.itemId]||0)+(+p.qty||0));
+    }
+  });
+  rValue.value=valid?total.toFixed(2):'';
+  Object.entries(grouped).forEach(([id,qty])=>{const item=db.items.find(i=>i.id==id),available=(item?.qty||0)-reservedQty(+id,date,editingReservationId);if(available<qty)problems.push(`${item?.name||'Peça'}: precisa ${qty}, disponível ${available}`)});
+  if(problems.length){stock.innerHTML='<div class="danger"><b>🚨 '+(valid?'Conflito de estoque':'Verifique as locações')+'</b><br>'+problems.join('<br>')+'</div>';return false}
+  stock.innerHTML='<div class="success">🟢 '+lines.length+' locação(ões) selecionada(s). Total: <b>'+money(total)+'</b></div>';return true;
 }
-function fillReservation(){rClient.innerHTML=db.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');rKit.innerHTML=db.kits.map(k=>`<option value="${k.id}">${k.name} • ${money(k.price)}</option>`).join('');rDate.value='';rTheme.value='';rDelivery.value='';rReturn.value='';rPaid.value=0;rValue.value='';rStatus.value='Confirmada';rObs.value='';rType.value='kit';rAvulsoParts.innerHTML='';toggleReservationType();stockCheck.innerHTML='<div class="muted">Selecione o kit e a data para verificar o estoque.</div>'}
+function updateReservationClientInfo(){
+  const c=db.clients.find(x=>x.id===+document.getElementById('rClient').value),box=document.getElementById('reservationClientInfo');
+  if(!box)return;
+  if(!c){box.textContent='Selecione o cliente.';return;}
+  box.innerHTML='📱 '+(c.phone||'-')+' • CPF: '+(c.cpf||'-')+' • ✉️ '+(c.email||'-')+'<br>📍 '+(c.address||'Endereço não informado');
+}
+function fillReservation(){
+  rClient.innerHTML='<option value="">Selecione o cliente</option>'+db.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');rDate.value='';rTheme.value='';rDelivery.value='';rReturn.value='';rPaid.value=0;rValue.value='';rStatus.value='Confirmada';rObs.value='';document.getElementById('reservationLines').innerHTML='';addReservationLine({type:'kit',kitId:''});updateReservationClientInfo();stockCheck.innerHTML='<div class="muted">Selecione a data do evento para verificar o estoque.</div>';
+}
 let editingReservationId=null;
 
 function openReservationModal(id=null){
-  editingReservationId=id;
-  const title=document.getElementById('reservationModalTitle');
-  if(typeof fillReservation==='function') fillReservation();
-  const btn=document.getElementById('saveReservationBtn');
-  if(id){
-    const r=db.reservations.find(x=>x.id===id); if(!r)return;
-    document.getElementById('rClient').value=r.clientId||'';
-    document.getElementById('rType').value=Array.isArray(r.avulsoParts)?'avulso':'kit';
-    document.getElementById('rKit').value=r.kitId||'';
-    document.getElementById('rDate').value=r.date||'';
-    document.getElementById('rTheme').value=r.theme||'';
-    document.getElementById('rDelivery').value=r.delivery||'';
-    document.getElementById('rReturn').value=r.returnDate||'';
-    document.getElementById('rPaid').value=r.paid||0;
-    document.getElementById('rStatus').value=r.status||'Confirmada';
-    document.getElementById('rObs').value=r.obs||'';
-    if(Array.isArray(r.avulsoParts)){rAvulsoParts.innerHTML='';r.avulsoParts.forEach(p=>addAvulsoPart(p.itemId,p.qty));}
-    title.textContent='Editar reserva'; btn.textContent='Salvar alterações';
-    document.getElementById('reservation').classList.add('show');
-    toggleReservationType();checkReservation();
-  }else{
-    title.textContent='Nova reserva'; btn.textContent='Salvar';
-    openModal('reservation');
-  }
+  editingReservationId=id;const title=document.getElementById('reservationModalTitle'),btn=document.getElementById('saveReservationBtn'),delBtn=document.getElementById('deleteReservationBtn');fillReservation();
+  if(id){const r=db.reservations.find(x=>x.id===id);if(!r)return;document.getElementById('rClient').value=r.clientId||'';updateReservationClientInfo();document.getElementById('rDate').value=r.date||'';document.getElementById('rTheme').value=r.theme||'';document.getElementById('rDelivery').value=r.delivery||'';document.getElementById('rReturn').value=r.returnDate||'';document.getElementById('rPaid').value=r.paid||0;document.getElementById('rStatus').value=r.status||'Confirmada';document.getElementById('rObs').value=r.obs||'';document.getElementById('reservationLines').innerHTML='';getReservationLines(r).forEach(line=>renderReservationLine(line));title.textContent='Editar reserva';btn.textContent='Salvar alterações';if(delBtn)delBtn.style.display='inline-block';document.getElementById('reservation').classList.add('show');checkReservation();}
+  else{title.textContent='Nova reserva';btn.textContent='Salvar';if(delBtn)delBtn.style.display='none';openModal('reservation');}
 }
-
+function deleteReservation(id){
+  const r=db.reservations.find(x=>x.id===id);
+  if(!r)return;
+  const client=db.clients.find(x=>x.id===r.clientId);
+  const name=client?.name||'esta festa';
+  if(!confirm('Excluir a reserva de '+name+'? Esta ação não pode ser desfeita.'))return;
+  db.reservations=db.reservations.filter(x=>x.id!==id);
+  if(Array.isArray(db.financeEntries)){
+    db.financeEntries=db.financeEntries.filter(x=>x.reservationId!==id);
+  }
+  editingReservationId=null;
+  closeModal('reservation');
+  persist();
+  renderCalendar();
+  render();
+  renderDelivery('entrega');
+  renderDeliveryKPIs();
+  renderAlerts();
+}
 function saveReservation(){
-  const clientId=+document.getElementById('rClient').value;
-  const type=document.getElementById('rType').value;
-  const kitId=type==='kit'?+document.getElementById('rKit').value:null;
-  const date=document.getElementById('rDate').value;
-  const kit=kitId?db.kits.find(k=>k.id===kitId):null;
-  const avulsoParts=type==='avulso'?getAvulsoParts():[];
-  if(!clientId||!date)return alert('Preencha cliente e data do evento.');
-  if(type==='kit'&&!kitId)return alert('Selecione o kit.');
-  if(type==='avulso'&&!avulsoParts.length)return alert('Adicione pelo menos uma peça avulsa.');
+  const clientId=+document.getElementById('rClient').value,date=document.getElementById('rDate').value,lines=getReservationLinesFromForm();
+  if(!clientId||!date)return alert('Preencha cliente e data do evento.');if(!lines.length)return alert('Adicione pelo menos uma locação.');
+  if(lines.some(l=>l.type!=='avulso'&&!l.kitId))return alert('Selecione o kit de cada locação.');if(lines.some(l=>l.type==='avulso'&&!l.parts.length))return alert('Adicione pelo menos uma peça em cada locação avulsa.');
   if(!checkReservation())return alert('Há conflito de estoque ou faltam informações na reserva.');
-  const data={clientId,kitId,date,theme:document.getElementById('rTheme').value.trim(),
-    delivery:document.getElementById('rDelivery').value,returnDate:document.getElementById('rReturn').value,
-    value:+document.getElementById('rValue').value||0,paid:+document.getElementById('rPaid').value||0,
-    obs:document.getElementById('rObs').value.trim(),status:document.getElementById('rStatus').value||'Confirmada'};
-  if(type==='avulso')data.avulsoParts=avulsoParts;else delete data.avulsoParts;
+  const firstKit=lines.find(l=>l.type==='kit'&&l.kitId),firstAv=lines.find(l=>l.type==='avulso');
+  const data={clientId,lines,kitId:firstKit?firstKit.kitId:null,date,theme:document.getElementById('rTheme').value.trim(),delivery:document.getElementById('rDelivery').value,returnDate:document.getElementById('rReturn').value,value:+document.getElementById('rValue').value||0,paid:+document.getElementById('rPaid').value||0,obs:document.getElementById('rObs').value.trim(),status:document.getElementById('rStatus').value||'Confirmada'};
+  if(firstAv)data.avulsoParts=firstAv.parts;else delete data.avulsoParts;
   if(editingReservationId){const r=db.reservations.find(x=>x.id===editingReservationId);if(r)Object.assign(r,data);}else db.reservations.push({id:Date.now(),...data});
-  editingReservationId=null;closeModal('reservation');persist();renderCalendar();render();
+  editingReservationId=null;closeModal('reservation');persist();renderCalendar();render();renderDelivery('entrega');renderDeliveryKPIs();renderAlerts();
 }
 
 let editingClientId=null;
@@ -812,8 +853,8 @@ function renderDelivery(mode='entrega'){
   const today=new Date();today.setHours(0,0,0,0);
   const rows=db.reservations.filter(r=>r[key]&&(r.status||'Confirmada')!=='Cancelada').slice().sort((a,b)=>String(a[key]).localeCompare(String(b[key])));
   tbody.innerHTML=rows.length?rows.map(r=>{
-    const c=db.clients.find(x=>x.id===r.clientId),k=db.kits.find(x=>x.id===r.kitId),d=new Date(r[key]+'T12:00:00');d.setHours(0,0,0,0),late=mode==='devolucao'&&d<today;
-    return `<tr><td>${formatDateBR(r[key])}</td><td>${c?.name||'-'}</td><td>${r.theme||'-'}</td><td>${k?.name||'-'}</td><td><span class="badge ${late?'bad':'ok'}">${late?'⚠ Atrasada':(r.status||'Confirmada')}</span></td><td><button class="btn light" type="button" onclick="openReservationModal(${r.id})">✏️ Reserva</button></td></tr>`;
+    const c=db.clients.find(x=>x.id===r.clientId),d=new Date(r[key]+'T12:00:00');d.setHours(0,0,0,0),late=mode==='devolucao'&&d<today;
+    return `<tr><td>${formatDateBR(r[key])}</td><td>${c?.name||'-'}</td><td>${r.theme||'-'}</td><td>${linesSummary(r)}</td><td><span class="badge ${late?'bad':'ok'}">${late?'⚠ Atrasada':(r.status||'Confirmada')}</span></td><td><button class="btn light" type="button" onclick="openReservationModal(${r.id})">✏️ Reserva</button></td></tr>`;
   }).join(''):'<tr><td colspan="6" class="muted">Nenhuma movimentação cadastrada.</td></tr>';
 }
 function renderDeliveryKPIs(){
@@ -843,10 +884,10 @@ function render(){
 document.getElementById('kpiRes').textContent=db.reservations.length;document.getElementById('kpiCli').textContent=db.clients.length;document.getElementById('kpiItens').textContent=db.items.length;
 let activeReservations=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada');let due=activeReservations.reduce((s,r)=>s+r.value-r.paid,0);document.getElementById('kpiReceber').textContent=money(due);
 document.getElementById('finTotal').textContent=money(activeReservations.reduce((s,r)=>s+r.value,0));document.getElementById('finPaid').textContent=money(activeReservations.reduce((s,r)=>s+r.paid,0));document.getElementById('finDue').textContent=money(due);
-let rows=db.reservations.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{let c=db.clients.find(x=>x.id===r.clientId),k=db.kits.find(x=>x.id===r.kitId);let st=r.status||'Confirmada';let cls=st==='Confirmada'?'status-confirmada':st==='Pendente'?'status-pendente':st==='Cancelada'?'status-cancelada':'status-contrato';return `<tr><td>${new Date(r.date+'T12:00:00').toLocaleDateString('pt-BR')}</td><td>${c?.name||'-'}</td><td>${r.theme||'-'}</td><td>${Array.isArray(r.avulsoParts)?'Peças avulsas':(k?.name||'-')}</td><td>${r.delivery?new Date(r.delivery+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${r.returnDate?new Date(r.returnDate+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${money(r.value)}</td><td><span class="badge ${cls}">${st==='Confirmada'?'🟢 ':st==='Pendente'?'🟡 ':st==='Cancelada'?'🔴 ':'🔵 '}${st}</span></td><td><button class="btn light" type="button" onclick="openReservationModal(${r.id})">✏️ Editar</button></td></tr>`}).join('')||'<tr><td colspan="8" class="muted">Nenhuma reserva cadastrada.</td></tr>';
+let rows=db.reservations.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{let c=db.clients.find(x=>x.id===r.clientId);let st=r.status||'Confirmada';let cls=st==='Confirmada'?'status-confirmada':st==='Pendente'?'status-pendente':st==='Cancelada'?'status-cancelada':'status-contrato';return `<tr><td>${new Date(r.date+'T12:00:00').toLocaleDateString('pt-BR')}</td><td>${c?.name||'-'}</td><td>${r.theme||'-'}</td><td>${linesSummary(r)}</td><td>${r.delivery?new Date(r.delivery+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${r.returnDate?new Date(r.returnDate+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${money(r.value)}</td><td><span class="badge ${cls}">${st==='Confirmada'?'🟢 ':st==='Pendente'?'🟡 ':st==='Cancelada'?'🔴 ':'🔵 '}${st}</span></td><td><button class="btn light" type="button" onclick="openReservationModal(${r.id})">✏️ Editar</button></td></tr>`}).join('')||'<tr><td colspan="8" class="muted">Nenhuma reserva cadastrada.</td></tr>';
 reservationTable.innerHTML=rows;dashReservations.innerHTML=rows||'<tr><td>Nenhuma reserva.</td></tr>';
 clientTable.innerHTML=db.clients.map(c=>`<tr><td>${c.name}</td><td>${c.phone||'-'}</td><td>${c.cpf||'-'}</td><td>${c.address||'-'}</td><td><button class="btn light" type="button" onclick="openClientModal(${c.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="openClientHistory(${c.id})">📋 Histórico</button></td></tr>`).join('');
-itemTable.innerHTML=db.items.map(i=>{let used=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada').reduce((s,r)=>{let kitQty=(db.kits.find(k=>k.id===r.kitId)?.parts.find(p=>p.itemId===i.id)?.qty)||0;let avQty=Array.isArray(r.avulsoParts)?((r.avulsoParts.find(p=>p.itemId===i.id)?.qty)||0):0;return s+kitQty+avQty},0);let avail=i.qty-used;return `<tr><td>${i.name}</td><td>${i.qty}</td><td>${used}</td><td><b>${avail}</b></td><td>${money(i.price||0)}</td><td><span class="badge ${avail>0?'ok':'bad'}">${avail>0?'Disponível':'Indisponível'}</span></td><td><button class="btn light" type="button" onclick="openItemModal(${i.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="deleteItem(${i.id})">🗑️ Excluir</button></td></tr>`}).join('');
+itemTable.innerHTML=db.items.map(i=>{let used=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada').reduce((sum,r)=>sum+getReservationLines(r).reduce((ls,line)=>{if(line.type==='avulso')return ls+(line.parts||[]).filter(p=>+p.itemId===+i.id).reduce((a,p)=>a+(+p.qty||0),0);const k=db.kits.find(x=>x.id==line.kitId);return ls+(k?.parts||[]).filter(p=>+p.itemId===+i.id).reduce((a,p)=>a+(+p.qty||0),0)},0),0);let avail=i.qty-used;return `<tr><td>${i.name}</td><td>${i.qty}</td><td>${used}</td><td><b>${avail}</b></td><td>${money(i.price||0)}</td><td><span class="badge ${avail>0?'ok':'bad'}">${avail>0?'Disponível':'Indisponível'}</span></td><td><button class="btn light" type="button" onclick="openItemModal(${i.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="deleteItem(${i.id})">🗑️ Excluir</button></td></tr>`}).join('');
 kitList.innerHTML=db.kits.map(k=>`<div class="panel kit"><h3>🎀 ${k.name}</h3><div class="muted">${money(k.price)}</div><p>${k.parts.map(p=>{let i=db.items.find(x=>x.id===p.itemId);return `${p.qty}× ${i?.name||'item removido'}`}).join(' • ')}</p><div class="actions"><button class="btn light" type="button" onclick="openKitModal(${k.id})">✏️ Editar kit</button></div></div>`).join('');
 let alerts=[];db.items.forEach(i=>{if(i.qty<2)alerts.push(`⚠️ ${i.name}: estoque baixo.`)});alertsEl= document.getElementById('alerts');alertsEl.innerHTML=alerts.length?alerts.map(x=>`<div class="alert">${x}</div>`).join(''):'<div class="muted">Nenhum alerta.</div>';
 }
@@ -862,44 +903,13 @@ function statusClass(st){
 }
 
 function renderCalendar(){
-  const grid=document.getElementById('calendarGrid'),title=document.getElementById('calendarTitle');
-  if(!grid||!title)return;
-  const y=calendarCursor.getFullYear(),m=calendarCursor.getMonth();
-  title.textContent=new Date(y,m,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-  const filter=document.getElementById('agendaStatusFilter')?.value||'Todos';
-  const query=(document.getElementById('agendaSearch')?.value||'').toLowerCase().trim();
-  const matches=r=>{
-    const st=r.status||'Confirmada';
-    if(st==='Cancelada')return false;
-    if(filter!=='Todos'&&st!==filter)return false;
-    if(!query)return true;
-    const c=db.clients.find(x=>x.id===r.clientId),k=db.kits.find(x=>x.id===r.kitId);
-    return ((c?.name||'')+' '+(r.theme||'')+' '+(k?.name||'')+' '+(Array.isArray(r.avulsoParts)?'Peças avulsas':'')).toLowerCase().includes(query);
-  };
-  const startDay=(new Date(y,m,1).getDay()+6)%7,total=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate();
-  const weekdays=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
-  let out=weekdays.map(x=>'<div class="cal-week">'+x+'</div>');
-  const today=new Date();today.setHours(0,0,0,0);
-  for(let i=0;i<42;i++){
-    let d=i-startDay+1,dt,other=false;
-    if(d<1){dt=new Date(y,m-1,prev+d);other=true}
-    else if(d>total){dt=new Date(y,m+1,d-total);other=true}
-    else dt=new Date(y,m,d);
-    const iso=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
-    const rs=db.reservations.filter(r=>r.date===iso&&matches(r));
-    const events=rs.map(r=>{
-      const c=db.clients.find(x=>x.id===r.clientId),k=db.kits.find(x=>x.id===r.kitId),st=r.status||'Confirmada';
-      const label=(c?.name||'Cliente')+' • '+(r.theme||k?.name||(Array.isArray(r.avulsoParts)?'Peças avulsas':'Reserva'));
-      return '<div class="cal-event '+statusClass(st)+'" onclick="event.stopPropagation();openReservationDetails('+r.id+')">'+label+'</div>';
-    }).join('');
-    out.push('<div class="cal-day '+(other?'other ':'')+(dt.getTime()===today.getTime()?'today':'')+'" onclick="newReservationFor(\''+iso+'\')"><div class="cal-num">'+dt.getDate()+'</div>'+events+'</div>');
-  }
-  grid.innerHTML=out.join('');
-  const summary=document.getElementById('agendaSummary');
-  if(summary){
-    const totalMonth=db.reservations.filter(r=>{const dt=new Date(r.date+'T12:00:00');return dt.getFullYear()===y&&dt.getMonth()===m&&matches(r)}).length;
-    summary.innerHTML='📅 <b>'+totalMonth+'</b> reserva(s) neste mês'+(filter!=='Todos'?' • filtro: <b>'+filter+'</b>':'')+(query?' • busca: <b>'+query+'</b>':'');
-  }
+  const grid=document.getElementById('calendarGrid'),title=document.getElementById('calendarTitle');if(!grid||!title)return;
+  const y=calendarCursor.getFullYear(),m=calendarCursor.getMonth();title.textContent=new Date(y,m,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const filter=document.getElementById('agendaStatusFilter')?.value||'Todos',query=(document.getElementById('agendaSearch')?.value||'').toLowerCase().trim();
+  const matches=r=>{const st=r.status||'Confirmada';if(st==='Cancelada')return false;if(filter!=='Todos'&&st!==filter)return false;if(!query)return true;const c=db.clients.find(x=>x.id===r.clientId);return ((c?.name||'')+' '+(r.theme||'')+' '+linesSummary(r)).toLowerCase().includes(query)};
+  const startDay=(new Date(y,m,1).getDay()+6)%7,total=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate(),weekdays=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];let out=weekdays.map(x=>'<div class="cal-week">'+x+'</div>');const today=new Date();today.setHours(0,0,0,0);
+  for(let i=0;i<42;i++){let d=i-startDay+1,dt,other=false;if(d<1){dt=new Date(y,m-1,prev+d);other=true}else if(d>total){dt=new Date(y,m+1,d-total);other=true}else dt=new Date(y,m,d);const iso=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');const rs=db.reservations.filter(r=>r.date===iso&&matches(r));const events=rs.map(r=>{const c=db.clients.find(x=>x.id===r.clientId),st=r.status||'Confirmada';const label=(c?.name||'Cliente')+' • '+(r.theme||linesSummary(r)||'Reserva');return '<div class="cal-event '+statusClass(st)+'" onclick="event.stopPropagation();openReservationDetails('+r.id+')">'+label+'</div>'}).join('');out.push('<div class="cal-day '+(other?'other ':'')+(dt.getTime()===today.getTime()?'today':'')+'" onclick="newReservationFor(\''+iso+'\')"><div class="cal-num">'+dt.getDate()+'</div>'+events+'</div>')}
+  grid.innerHTML=out.join('');const summary=document.getElementById('agendaSummary');if(summary){const totalMonth=db.reservations.filter(r=>{const dt=new Date(r.date+'T12:00:00');return dt.getFullYear()===y&&dt.getMonth()===m&&matches(r)}).length;summary.innerHTML='📅 <b>'+totalMonth+'</b> reserva(s) neste mês'+(filter!=='Todos'?' • filtro: <b>'+filter+'</b>':'')+(query?' • busca: <b>'+query+'</b>':'')}
 }
 
 function changeMonth(n){
@@ -920,46 +930,10 @@ function newReservationFor(date){
 }
 
 function openReservationDetails(id){
-  const r=db.reservations.find(x=>x.id===id);if(!r)return;
-  const c=db.clients.find(x=>x.id===r.clientId)||{},k=db.kits.find(x=>x.id===r.kitId)||{},st=r.status||'Confirmada';
-  const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'-';
-  const saldo=Math.max(0,(+r.value||0)-(+r.paid||0));
-  const modal=document.getElementById('reservationDetails');
-  if(!modal)return;
-
-  document.getElementById('reservationDetailsContent').innerHTML=
-    '<div class="details-grid">'+
-    '<div><span class="label">Cliente</span><strong>'+(c.name||'-')+'</strong></div>'+
-    '<div><span class="label">WhatsApp</span><strong>'+(c.phone||'-')+'</strong></div>'+
-    '<div><span class="label">CPF</span><strong>'+(c.cpf||'-')+'</strong></div>'+
-    '<div><span class="label">Tema</span><strong>'+(r.theme||'-')+'</strong></div>'+
-    '<div><span class="label">Kit</span><strong>'+(Array.isArray(r.avulsoParts)?'Peças avulsas':(k.name||'-'))+'</strong></div>'+
-    '<div><span class="label">Evento</span><strong>'+fmt(r.date)+'</strong></div>'+
-    '<div><span class="label">Entrega</span><strong>'+fmt(r.delivery)+'</strong></div>'+
-    '<div><span class="label">Devolução</span><strong>'+fmt(r.returnDate)+'</strong></div>'+
-    '<div><span class="label">Status</span><strong>'+st+'</strong></div>'+
-    (Array.isArray(r.avulsoParts)?'<div class="full"><span class="label">Peças avulsas</span><strong>'+r.avulsoParts.map(p=>{const i=db.items.find(x=>x.id===p.itemId);return (p.qty||0)+'× '+(i?.name||'Peça')+' • '+money((i?.price||0)*(p.qty||0))}).join('<br>')+'</strong></div>':'')+
-    '<div><span class="label">Valor</span><strong>'+money(r.value)+'</strong></div>'+
-    '<div><span class="label">Entrada</span><strong>'+money(r.paid)+'</strong></div>'+
-    '<div><span class="label">Saldo</span><strong>'+money(saldo)+'</strong></div>'+
-    '<div class="full"><span class="label">Observação</span><strong>'+(r.obs||'-')+'</strong></div>'+
-    '</div>';
-
-  let actions=modal.querySelector('.actions');
-  if(!actions){
-    actions=document.createElement('div');actions.className='actions';
-    modal.querySelector('.modalbox').appendChild(actions);
-  }
-  actions.innerHTML=
-    '<button class="btn light" type="button" id="closeReservationDetailsBtn">Fechar</button>'+
-    '<button class="btn light" type="button" id="editReservationBtn">✏️ Editar reserva</button>'+
-    '<button class="btn primary" type="button" id="generateContractBtn">📄 Gerar contrato</button>';
-
-  document.getElementById('closeReservationDetailsBtn').onclick=function(){closeModal('reservationDetails')};
-  document.getElementById('editReservationBtn').onclick=function(){closeModal('reservationDetails');openReservationModal(id)};
-  document.getElementById('generateContractBtn').onclick=function(){generateContract(id)};
-
-  modal.classList.add('show');
+  const r=db.reservations.find(x=>x.id===id);if(!r)return;const c=db.clients.find(x=>x.id===r.clientId)||{},st=r.status||'Confirmada';const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'-';const saldo=Math.max(0,(+r.value||0)-(+r.paid||0));const modal=document.getElementById('reservationDetails');if(!modal)return;
+  const lines=getReservationLines(r).map((line,i)=>{if(line.type==='avulso')return '<b>'+(i+1)+'. 📦 Peças avulsas</b><br>'+((line.parts||[]).map(p=>{const item=db.items.find(x=>x.id===p.itemId);return (p.qty||0)+'× '+(item?.name||'Peça')+' • '+money((item?.price||0)*(p.qty||0))}).join('<br>')||'Nenhuma peça selecionada');const k=db.kits.find(x=>x.id==line.kitId);return '<b>'+(i+1)+'. '+(line.type==='mesa'?'🎉 Kit Festa na Mesa':'🎀 Kit')+'</b>: '+(k?.name||'-')+' • '+money(k?.price||0)}).join('<br><br>');
+  document.getElementById('reservationDetailsContent').innerHTML='<div class="details-grid"><div><span class="label">Cliente</span><strong>'+(c.name||'-')+'</strong></div><div><span class="label">WhatsApp</span><strong>'+(c.phone||'-')+'</strong></div><div><span class="label">CPF</span><strong>'+(c.cpf||'-')+'</strong></div><div><span class="label">Tema</span><strong>'+(r.theme||'-')+'</strong></div><div class="full"><span class="label">Locações</span><strong>'+lines+'</strong></div><div><span class="label">Evento</span><strong>'+fmt(r.date)+'</strong></div><div><span class="label">Entrega</span><strong>'+fmt(r.delivery)+'</strong></div><div><span class="label">Devolução</span><strong>'+fmt(r.returnDate)+'</strong></div><div><span class="label">Status</span><strong>'+st+'</strong></div><div><span class="label">Valor</span><strong>'+money(r.value)+'</strong></div><div><span class="label">Entrada</span><strong>'+money(r.paid)+'</strong></div><div><span class="label">Saldo</span><strong>'+money(saldo)+'</strong></div><div class="full"><span class="label">Observação</span><strong>'+(r.obs||'-')+'</strong></div></div>';
+  let actions=modal.querySelector('.actions');if(!actions){actions=document.createElement('div');actions.className='actions';modal.querySelector('.modalbox').appendChild(actions)}actions.innerHTML='<button class="btn light" type="button" id="closeReservationDetailsBtn">Fechar</button><button class="btn light" type="button" id="editReservationBtn">✏️ Editar reserva</button><button class="btn primary" type="button" id="generateContractBtn">📄 Gerar contrato</button>';document.getElementById('closeReservationDetailsBtn').onclick=function(){closeModal('reservationDetails')};document.getElementById('editReservationBtn').onclick=function(){closeModal('reservationDetails');openReservationModal(id)};document.getElementById('generateContractBtn').onclick=function(){generateContract(id)};modal.classList.add('show');
 }
 
 function loadAdmin(){
@@ -1160,50 +1134,9 @@ function importBackup(event){
 let currentContractReservationId=null;
 
 function generateContract(id){
-  const r=db.reservations.find(x=>x.id===id);if(!r)return;
-  currentContractReservationId=id;
-  const statusReservation=db.reservations.find(x=>x.id===id);if(statusReservation&&statusReservation.status==='Confirmada'){statusReservation.status='Contrato gerado';persist();renderCalendar();if(typeof renderFinance==='function')renderFinance();}
-  const c=db.clients.find(x=>x.id===r.clientId)||{};
-  const k=db.kits.find(x=>x.id===r.kitId)||{};const isAvulso=Array.isArray(r.avulsoParts);const avulsoLabel=isAvulso?'Peças avulsas':(k.name||'-');
-  const saldo=Math.max(0,(+r.value||0)-(+r.paid||0));
-  const today=new Date().toLocaleDateString('pt-BR');
-  const logo=document.querySelector('.real-logo img')?.src||'';
-  const esc=v=>String(v??'-').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const moneySafe=v=>money(v||0);
-  document.getElementById('contractContent').innerHTML=
-  '<div class="contract-head">'+
-  (logo?'<img class="contract-logo" src="'+logo+'" alt="P&M Bellpapell">':'')+
-  '<h3>P&M Bellpapell</h3><div>Locação de decoração • Pegue e Monte</div>'+
-  '<div>WhatsApp: (24) 99277-4581 • Instagram: @bellpapell</div></div>'+
-  '<h3>CONTRATO DE LOCAÇÃO DE DECORAÇÃO</h3>'+
-  '<p><b>Data da contratação:</b> '+today+'</p>'+
-  '<h4>1. IDENTIFICAÇÃO DAS PARTES</h4>'+
-  '<p><b>LOCADORA:</b> P&M Bellpapell.</p>'+
-  '<p><b>CONTRATANTE:</b> '+esc(c.name)+'</p>'+
-  '<div class="contract-data"><b>CPF:</b> '+esc(c.cpf)+'<br><b>Endereço:</b> '+esc(c.address)+'<br><b>WhatsApp:</b> '+esc(c.phone)+'<br><b>E-mail:</b> '+esc(c.email)+'</div>'+
-  '<h4>2. OBJETO DA LOCAÇÃO</h4>'+
-  '<p>A LOCADORA disponibilizará à CONTRATANTE o conjunto de peças e itens de decoração correspondente ao kit ou às peças avulsas contratadas, conforme os dados da reserva abaixo.</p>'+
-  '<div class="contract-data"><b>Tema:</b> '+esc(r.theme)+'<br><b>Kit:</b> '+esc(avulsoLabel)+'<br><b>Data do evento:</b> '+formatDateBR(r.date)+'<br><b>Entrega/retirada:</b> '+formatDateBR(r.delivery)+'<br><b>Devolução:</b> '+formatDateBR(r.returnDate)+'</div>'+
-  '<h4>3. VALORES E PAGAMENTO</h4>'+
-  '<p>Valor total da locação: <b>'+moneySafe(r.value)+'</b>.</p>'+
-  '<p>Valor já recebido: <b>'+moneySafe(r.paid)+'</b>. Saldo restante: <b>'+moneySafe(saldo)+'</b>.</p>'+
-  '<p>Os pagamentos deverão seguir as condições acordadas entre as partes e registradas na reserva.</p>'+
-  '<h4>4. RETIRADA, ENTREGA E DEVOLUÇÃO</h4>'+
-  '<p>A CONTRATANTE deverá retirar/receber os itens na data combinada e devolvê-los na data estabelecida, nas mesmas condições em que foram entregues, salvo o desgaste normal decorrente do uso adequado.</p>'+
-  '<h4>5. CONSERVAÇÃO, DANOS E PERDAS</h4>'+
-  '<p>A CONTRATANTE fica responsável pela guarda e conservação dos itens durante o período da locação. Em caso de perda, quebra, dano ou avaria decorrente de uso inadequado, poderá ser cobrado o valor correspondente ao reparo ou reposição do item.</p>'+
-  '<h4>6. ATRASO NA DEVOLUÇÃO</h4>'+
-  '<p>A devolução deverá ocorrer no prazo combinado. Eventuais atrasos poderão gerar cobrança adicional, conforme as condições previamente acordadas entre as partes.</p>'+
-  '<h4>7. CANCELAMENTO E REMARCAÇÃO</h4>'+
-  '<p>Pedidos de cancelamento ou remarcação deverão ser comunicados à LOCADORA com antecedência. As condições aplicáveis serão aquelas informadas e acordadas no momento da contratação.</p>'+
-  '<h4>8. RESPONSABILIDADE PELA MONTAGEM E DESMONTAGEM</h4>'+
-  '<p>Nos serviços de Pegue e Monte, a montagem, desmontagem e utilização dos itens serão realizadas pela CONTRATANTE, que se compromete a seguir as orientações de conservação e manuseio fornecidas pela LOCADORA.</p>'+
-  '<h4>9. DISPOSIÇÕES GERAIS</h4>'+
-  '<p>As partes declaram estar de acordo com as informações da reserva e com as condições deste contrato, comprometendo-se a cumprir as obrigações aqui descritas.</p>'+
-  '<div class="contract-data"><b>Observações da reserva:</b><br>'+esc(r.obs||'Nenhuma')+'</div>'+
-  '<p>Local e data: ________________________________, '+today+'.</p>'+
-  '<div class="signature-area"><div class="signature-line">CONTRATANTE<br>'+esc(c.name)+'</div><div class="signature-line">P&M Bellpapell<br>LOCADORA</div></div>';
-  document.getElementById('contractPreview').classList.add('show');
+  const r=db.reservations.find(x=>x.id===id);if(!r)return;currentContractReservationId=id;const statusReservation=db.reservations.find(x=>x.id===id);if(statusReservation&&statusReservation.status==='Confirmada'){statusReservation.status='Contrato gerado';persist();renderCalendar();if(typeof renderFinance==='function')renderFinance()}const c=db.clients.find(x=>x.id===r.clientId)||{};const saldo=Math.max(0,(+r.value||0)-(+r.paid||0));const today=new Date().toLocaleDateString('pt-BR');const logo=document.querySelector('.real-logo img')?.src||'';const esc=v=>String(v??'-').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));const moneySafe=v=>money(v||0);
+  const rentalHtml=getReservationLines(r).map((line,i)=>{if(line.type==='avulso'){return '<div><b>'+(i+1)+'. 📦 Peças avulsas</b><br>'+((line.parts||[]).map(p=>{const item=db.items.find(x=>x.id===p.itemId);return esc(p.qty)+'× '+esc(item?.name||'Peça')+' • '+moneySafe((item?.price||0)*(p.qty||0))}).join('<br>')||'Nenhuma peça selecionada')+'</div>'}const k=db.kits.find(x=>x.id==line.kitId);return '<div><b>'+(i+1)+'. '+(line.type==='mesa'?'🎉 Kit Festa na Mesa':'🎀 Kit')+':</b> '+esc(k?.name||'-')+' • '+moneySafe(k?.price||0)+'</div>'}).join('<div style="margin:8px 0;border-bottom:1px solid #eee"></div>');
+  document.getElementById('contractContent').innerHTML='<div class="contract-head">'+(logo?'<img class="contract-logo" src="'+logo+'" alt="P&M Bellpapell">':'')+'<h3>P&M Bellpapell</h3><div>Locação de decoração • Pegue e Monte</div><div>WhatsApp: (24) 99277-4581 • Instagram: @bellpapell</div></div><h3>CONTRATO DE LOCAÇÃO DE DECORAÇÃO</h3><p><b>Data da contratação:</b> '+today+'</p><h4>1. IDENTIFICAÇÃO DAS PARTES</h4><p><b>LOCADORA:</b> P&M Bellpapell.</p><p><b>CONTRATANTE:</b> '+esc(c.name)+'</p><div class="contract-data"><b>CPF:</b> '+esc(c.cpf)+'<br><b>Endereço:</b> '+esc(c.address)+'<br><b>WhatsApp:</b> '+esc(c.phone)+'<br><b>E-mail:</b> '+esc(c.email)+'</div><h4>2. OBJETO DA LOCAÇÃO</h4><p>A LOCADORA disponibilizará à CONTRATANTE os conjuntos de peças e itens de decoração correspondentes às locações contratadas, conforme os dados da reserva abaixo.</p><div class="contract-data"><b>Tema:</b> '+esc(r.theme)+'<br><b>Locações contratadas:</b><br>'+rentalHtml+'<br><b>Data do evento:</b> '+formatDateBR(r.date)+'<br><b>Entrega/retirada:</b> '+formatDateBR(r.delivery)+'<br><b>Devolução:</b> '+formatDateBR(r.returnDate)+'</div><h4>3. VALORES E PAGAMENTO</h4><p>Valor total da locação: <b>'+moneySafe(r.value)+'</b>.</p><p>Valor já recebido: <b>'+moneySafe(r.paid)+'</b>. Saldo restante: <b>'+moneySafe(saldo)+'</b>.</p><p>Os pagamentos deverão seguir as condições acordadas entre as partes e registradas na reserva.</p><h4>4. RETIRADA, ENTREGA E DEVOLUÇÃO</h4><p>A CONTRATANTE deverá retirar/receber os itens na data combinada e devolvê-los na data estabelecida, nas mesmas condições em que foram entregues, salvo o desgaste normal decorrente do uso adequado.</p><h4>5. CONSERVAÇÃO, DANOS E PERDAS</h4><p>A CONTRATANTE fica responsável pela guarda e conservação dos itens durante o período da locação. Em caso de perda, quebra, dano ou avaria decorrente de uso inadequado, poderá ser cobrado o valor correspondente ao reparo ou reposição do item.</p><h4>6. ATRASO NA DEVOLUÇÃO</h4><p>A devolução deverá ocorrer no prazo combinado. Eventuais atrasos poderão gerar cobrança adicional, conforme as condições previamente acordadas entre as partes.</p><h4>7. CANCELAMENTO E REMARCAÇÃO</h4><p>Pedidos de cancelamento ou remarcação deverão ser comunicados à LOCADORA com antecedência. As condições aplicáveis serão aquelas informadas e acordadas no momento da contratação.</p><h4>8. RESPONSABILIDADE PELA MONTAGEM E DESMONTAGEM</h4><p>Nos serviços de Pegue e Monte, a montagem, desmontagem e utilização dos itens serão realizadas pela CONTRATANTE, que se compromete a seguir as orientações de conservação e manuseio fornecidas pela LOCADORA.</p><h4>9. DISPOSIÇÕES GERAIS</h4><p>As partes declaram estar de acordo com as informações da reserva e com as condições deste contrato, comprometendo-se a cumprir as obrigações aqui descritas.</p><div class="contract-data"><b>Observações da reserva:</b><br>'+esc(r.obs||'Nenhuma')+'</div><p>Local e data: ________________________________, '+today+'.</p><div class="signature-area"><div class="signature-line">CONTRATANTE<br>'+esc(c.name)+'</div><div class="signature-line">P&M Bellpapell<br>LOCADORA</div></div>';document.getElementById('contractPreview').classList.add('show');
 }
 
 function printContract(){
