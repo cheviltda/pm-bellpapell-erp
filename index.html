@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#182b49">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="P&M ERP">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>P&M Bellpapell ERP • V22.1 • PONTE TESTE</title>
@@ -1363,5 +1368,14 @@ function printContract(){
 
 function filterTable(input,id){let q=input.value.toLowerCase();document.querySelectorAll('#'+id+' tr').forEach((r,i)=>{if(i)r.style.display=r.innerText.toLowerCase().includes(q)?'':'none'})}
 render();renderCalendar();renderFinance();renderDeliveryKPIs();renderAlerts();if(typeof loadAdmin==='function')loadAdmin();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(err){
+      console.warn('Service Worker não registrado:',err);
+    });
+  });
+}
 </script>
 </body></html>
