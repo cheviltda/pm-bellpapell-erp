@@ -389,6 +389,7 @@
 <div id="contractContent" class="contract-paper"></div>
 <div class="actions">
 <button class="btn light" onclick="closeModal('contractPreview')">Fechar</button>
+<button class="btn light" onclick="sendContractWhatsApp()">📲 Enviar pelo WhatsApp</button>
 <button class="btn primary" onclick="printContract()">🖨️ Imprimir / Salvar PDF</button>
 </div>
 </div></div>
@@ -1366,7 +1367,26 @@ function printContract(){
   w.document.close();
 }
 
-function filterTable(input,id){let q=input.value.toLowerCase();document.querySelectorAll('#'+id+' tr').forEach((r,i)=>{if(i)r.style.display=r.innerText.toLowerCase().includes(q)?'':'none'})}
+function sendContractWhatsApp(){
+  const id=currentContractReservationId;
+  const r=db.reservations.find(x=>x.id===id);
+  if(!r)return alert('Gere o contrato antes de enviar pelo WhatsApp.');
+  const c=db.clients.find(x=>x.id===r.clientId)||{};
+  const rawPhone=String(c.phone||'').replace(/\D/g,'');
+  if(!rawPhone)return alert('Este cliente não possui WhatsApp cadastrado. Cadastre o número do cliente primeiro.');
+  const phone=rawPhone.startsWith('55')?rawPhone:'55'+rawPhone;
+  const lines=getReservationLines(r).map((line,i)=>{
+    if(line.type==='avulso'){
+      const parts=(line.parts||[]).map(p=>{const item=db.items.find(x=>x.id==p.itemId);return `${p.qty}x ${item?.name||'Peça'}`}).join(', ');
+      return `${i+1}. Peças avulsas: ${parts||'Nenhuma'}`;
+    }
+    const k=db.kits.find(x=>x.id==line.kitId);
+    return `${i+1}. ${line.type==='mesa'?'Kit Festa na Mesa':'Kit'}: ${k?.name||'-'}`;
+  }).join('\n');
+  const saldo=Math.max(0,(+r.value||0)-(+r.paid||0));
+  const msg=`Olá, ${c.name||'tudo bem'}! 😊\n\nSegue o contrato de locação da P&M Bellpapell referente à sua reserva.\n\nTema: ${r.theme||'-'}\nData do evento: ${formatDateBR(r.date)}\nEntrega/retirada: ${formatDateBR(r.delivery)}\nDevolução: ${formatDateBR(r.returnDate)}\n\nLocações:\n${lines||'-'}\n\nValor total: ${money(r.value)}\nValor recebido: ${money(r.paid)}\nSaldo: ${money(saldo)}\n\nO contrato completo também pode ser salvo em PDF pelo botão “Imprimir / Salvar PDF” no ERP.\n\nP&M Bellpapell`;
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
+}\n\nfunction filterTable(input,id){let q=input.value.toLowerCase();document.querySelectorAll('#'+id+' tr').forEach((r,i)=>{if(i)r.style.display=r.innerText.toLowerCase().includes(q)?'':'none'})}
 render();renderCalendar();renderFinance();renderDeliveryKPIs();renderAlerts();if(typeof loadAdmin==='function')loadAdmin();
 </script>
 <script>
