@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#182b49">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="P&M ERP">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>P&M Bellpapell ERP • V22.1 • PONTE TESTE</title>
@@ -378,13 +383,12 @@
   </div>
 </div></div>
 
-<div class="modal" id="ponteAcervoModal"><div class="modalbox" style="max-width:760px"><h2>🔗 Acervo da Ponte Supabase</h2><div class="sub" style="margin-bottom:12px">TESTE V2 • leitura + importação individual. A quantidade do estoque local nunca é substituída pela ponte.</div><div id="ponteAcervoStatus" class="success" style="margin-bottom:12px">Aguardando leitura...</div><div id="ponteAcervoList" style="max-height:55vh;overflow:auto"></div><div class="actions"><button class="btn light" type="button" onclick="closeModal('ponteAcervoModal')">Fechar</button></div></div></div>
+<div class="modal" id="ponteAcervoModal"><div class="modalbox" style="max-width:760px"><h2>🔗 Acervo da Ponte Supabase</h2><div class="sub" style="margin-bottom:12px">Importação somente dos dados de gestão. O ERP não recebe nem exibe fotos ou ID do catálogo.</div><div id="ponteAcervoStatus" class="success" style="margin-bottom:12px">Aguardando leitura...</div><div id="ponteAcervoList" style="max-height:55vh;overflow:auto"></div><div class="actions"><button class="btn primary" type="button" id="ponteImportAllBtn" onclick="importarTodasDaPonte()">📥 Importar todas</button><button class="btn light" type="button" onclick="closeModal('ponteAcervoModal')">Fechar</button></div></div></div>
 <div class="modal" id="contractPreview"><div class="modalbox contract-modal">
 <h2>Contrato de locação</h2>
 <div id="contractContent" class="contract-paper"></div>
 <div class="actions">
 <button class="btn light" onclick="closeModal('contractPreview')">Fechar</button>
-<button class="btn primary" onclick="sendContractWhatsApp()">📲 Enviar pelo WhatsApp</button>
 <button class="btn primary" onclick="printContract()">🖨️ Imprimir / Salvar PDF</button>
 </div>
 </div></div>
@@ -1063,24 +1067,88 @@ function escapeHtml(value){
 
 const PONTE_SUPABASE_URL='https://lkvqurdokdkcjhazscvv.supabase.co';
 const PONTE_SUPABASE_KEY='sb_publishable_oNEz5f1BERX0BJcF4iOAdA_r0-cZAgT';
+let ponteRowsCache=[];
 
-async function importarPecaDaPonte(p){
-  if(!p || !p.catalog_product_id)return alert('Esta peça não possui ID do catálogo.');
-  const catalogId=String(p.catalog_product_id);
-  const existing=db.items.find(i=>String(i.catalogProductId||'')===catalogId);
-  const defaultQty=existing?String(existing.qty||1):'1';
-  const answer=prompt((existing?'Peça já cadastrada no ERP. Informe a quantidade atual do estoque local:':'Informe a quantidade desta peça no estoque local:')+'\n\n'+(p.name||'Peça'),defaultQty);
-  if(answer===null)return;
-  const qty=parseInt(answer,10);
-  if(!Number.isFinite(qty)||qty<1)return alert('Informe uma quantidade inteira maior que zero.');
-  const variations=Array.isArray(p.variants)?p.variants.map(v=>({name:String(v?.name||''),photo:String(v?.photo||'')})).filter(v=>v.name):[];
-  if(existing){
-    existing.name=String(p.name||existing.name||''); existing.price=Number(p.price)||0; existing.cat=String(p.cat||existing.cat||''); existing.subcat=String(p.subcat||existing.subcat||''); existing.obs=String(p.obs||existing.obs||''); existing.photo=String(p.photo||existing.photo||''); existing.variations=variations; existing.catalogProductId=catalogId; existing.qty=qty;
-    persist(); alert('Peça atualizada no ERP local.\n\n'+existing.name+'\nEstoque confirmado: '+existing.qty+' unidade(s).');
+async function importarPecaDaPonte(p, bulkQty=null){
+  if(!p)return;
+  const key=ponteChave(p);
+  const existing=db.items.find(i=>ponteChave(i)===key);
+  let qty;
+  if(bulkQty!==null){
+    qty=existing?Number(existing.qty||1):Number(bulkQty);
   }else{
-    const newItem={id:Date.now(),name:String(p.name||'Peça sem nome'),qty,price:Number(p.price)||0,cat:String(p.cat||''),subcat:String(p.subcat||''),variations,photo:String(p.photo||''),obs:String(p.obs||''),catalogProductId:catalogId};
-    db.items.push(newItem); persist(); alert('Peça importada para o ERP local.\n\n'+newItem.name+'\nEstoque inicial: '+newItem.qty+' unidade(s).');
+    const defaultQty=existing?String(existing.qty||1):'1';
+    const answer=prompt((existing?'Peça já cadastrada no ERP. Informe a quantidade atual do estoque local:':'Informe a quantidade desta peça no estoque local:')+'\n\n'+(p.name||'Peça'),defaultQty);
+    if(answer===null)return false;
+    qty=parseInt(answer,10);
+    if(!Number.isFinite(qty)||qty<1){alert('Informe uma quantidade inteira maior que zero.');return false;}
   }
+  if(!Number.isFinite(qty)||qty<1)return false;
+  if(existing){
+    existing.name=String(p.name||existing.name||'');
+    existing.price=Number(p.price)||0;
+    existing.cat=String(p.cat||existing.cat||'');
+    existing.subcat=String(p.subcat||existing.subcat||'');
+    existing.obs=String(p.obs||existing.obs||'');
+    existing.qty=existing.qty||qty;
+    existing.photo='';
+    existing.variations=[];
+  }else{
+    db.items.push({id:Date.now()+Math.floor(Math.random()*1000),name:String(p.name||'Peça sem nome'),qty,price:Number(p.price)||0,cat:String(p.cat||''),subcat:String(p.subcat||''),variations:[],photo:'',obs:String(p.obs||'')});
+  }
+  persist();
+  return true;
+}
+
+function ponteChave(p){
+  return [p?.name,p?.cat,p?.subcat,Number(p?.price)||0].map(v=>String(v??'').trim().toLowerCase()).join('|');
+}
+
+function renderPonteRows(rows){
+  const list=document.getElementById('ponteAcervoList');
+  const status=document.getElementById('ponteAcervoStatus');
+  const bulk=document.getElementById('ponteImportAllBtn');
+  ponteRowsCache=rows||[];
+  status.className='success';
+  status.textContent='✅ '+ponteRowsCache.length+' peça(s) aguardando importação';
+  if(bulk)bulk.disabled=!ponteRowsCache.length;
+  if(!ponteRowsCache.length){list.innerHTML='<div class="panel">🎉 Não há peças pendentes na ponte.</div>';return;}
+  const groups={};
+  ponteRowsCache.forEach(p=>{const g=(p.cat||'Sem categoria').trim()||'Sem categoria';(groups[g]??=[]).push(p);});
+  list.innerHTML=Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0])).map(([cat,items])=>
+    '<div style="margin-bottom:16px"><div style="font-weight:800;font-size:16px;margin:8px 0">'+escapeHtml(cat)+' <span class="sub">('+items.length+')</span></div>'+items.map(p=>
+      '<div class="panel" style="display:flex;gap:12px;align-items:center;margin-bottom:8px;padding:12px">'+
+      '<div style="flex:1;min-width:0"><strong>'+escapeHtml(p.name||'Peça sem nome')+'</strong><div class="sub" style="margin-top:3px">'+escapeHtml(p.subcat||'-')+' • '+money(p.price||0)+' / locação</div></div>'+
+      '<button class="btn primary" type="button" data-ponte-import="'+escapeHtml(String(p.id||''))+'">📥 Importar</button></div>'
+    ).join('')+'</div>'
+  ).join('');
+  list.querySelectorAll('[data-ponte-import]').forEach(btn=>btn.addEventListener('click',async()=>{
+    const p=ponteRowsCache.find(x=>String(x.id)===String(btn.dataset.ponteImport));
+    if(!p)return;
+    btn.disabled=true;
+    const ok=await importarPecaDaPonte(p);
+    if(ok){ponteRowsCache=ponteRowsCache.filter(x=>String(x.id)!==String(p.id));renderPonteRows(ponteRowsCache);}
+    else btn.disabled=false;
+  }));
+}
+
+async function importarTodasDaPonte(){
+  if(!ponteRowsCache.length)return;
+  const novas=ponteRowsCache.filter(p=>!db.items.some(i=>ponteChave(i)===ponteChave(p)));
+  let qtyNovas=1;
+  if(novas.length){
+    const answer=prompt('Quantidade inicial para as novas peças:\n\n'+novas.length+' peça(s)', '1');
+    if(answer===null)return;
+    qtyNovas=parseInt(answer,10);
+    if(!Number.isFinite(qtyNovas)||qtyNovas<1){alert('Informe uma quantidade inteira maior que zero.');return;}
+  }
+  const rows=[...ponteRowsCache];
+  let total=0;
+  for(const p of rows){
+    const ok=await importarPecaDaPonte(p,qtyNovas);
+    if(ok){total++;ponteRowsCache=ponteRowsCache.filter(x=>String(x.id)!==String(p.id));renderPonteRows(ponteRowsCache);}
+  }
+  alert('Importação concluída.\n\n'+total+' peça(s) importada(s).');
 }
 
 async function lerAcervoPonte(){
@@ -1089,22 +1157,17 @@ async function lerAcervoPonte(){
   const list=document.getElementById('ponteAcervoList');
   modal.classList.add('show');
   status.className='success';
-  status.textContent='🔄 Lendo a tabela acervo do Supabase...';
+  status.textContent='🔄 Lendo o acervo leve do Supabase...';
   list.innerHTML='';
   try{
-    const r=await fetch(PONTE_SUPABASE_URL+'/rest/v1/acervo?select=id,catalog_product_id,name,price,cat,subcat,obs,photo,variants,updated_at&order=updated_at.desc',{
+    const r=await fetch(PONTE_SUPABASE_URL+'/rest/v1/acervo?select=id,name,price,cat,subcat,obs&order=name.asc',{
       headers:{'apikey':PONTE_SUPABASE_KEY,'Authorization':'Bearer '+PONTE_SUPABASE_KEY,'Accept':'application/json'}
     });
     if(!r.ok){const txt=await r.text();throw new Error('HTTP '+r.status+' • '+txt.slice(0,180));}
     const rows=await r.json();
-    status.textContent='✅ LEITURA OK • '+rows.length+' peça(s) na ponte';
-    if(!rows.length){list.innerHTML='<div class="panel">Nenhuma peça encontrada na ponte.</div>';return;}
-    list.innerHTML=rows.map(p=>{
-      const vars=Array.isArray(p.variants)?p.variants:[];
-      const img=p.photo?'<img src="'+p.photo.replace(/"/g,'&quot;')+'" style="width:82px;height:82px;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb">':'<div style="width:82px;height:82px;border-radius:12px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:28px">📦</div>';
-      return '<div class="panel" style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">'+img+'<div style="flex:1;min-width:0"><strong style="font-size:17px">'+escapeHtml(p.name||'Peça sem nome')+'</strong><div class="sub" style="margin-top:4px">'+escapeHtml(p.cat||'-')+' • '+escapeHtml(p.subcat||'-')+'</div><div style="margin-top:6px"><b>'+money(p.price||0)+'</b> / locação</div><div class="sub" style="margin-top:5px">ID catálogo: '+escapeHtml(String(p.catalog_product_id||'-'))+' • Variações: '+vars.length+'</div><div style="margin-top:10px"><button class="btn primary" type="button" data-import-id="'+escapeHtml(String(p.catalog_product_id||''))+'">📥 Importar esta peça para o ERP</button></div></div></div>';
-    }).join('');
-    list.querySelectorAll('[data-import-id]').forEach(btn=>{btn.addEventListener('click',()=>{const p=rows.find(x=>String(x.catalog_product_id)===String(btn.dataset.importId)); if(p)importarPecaDaPonte(p);});});
+    const imported=new Set((db.items||[]).map(ponteChave));
+    const pending=rows.filter(p=>!imported.has(ponteChave(p)));
+    renderPonteRows(pending);
   }catch(e){
     status.className='error';
     status.textContent='❌ Falha na leitura: '+(e.message||e);
@@ -1303,47 +1366,16 @@ function printContract(){
   w.document.close();
 }
 
-function sendContractWhatsApp(){
-  const id=currentContractReservationId;
-  const r=db.reservations.find(x=>x.id===id);
-  if(!r)return alert('Não foi possível localizar a reserva deste contrato.');
-  const c=db.clients.find(x=>x.id===r.clientId)||{};
-  let phone=String(c.phone||'').replace(/\D/g,'');
-  if(!phone)return alert('Cadastre o WhatsApp do cliente antes de enviar o contrato.');
-  if(phone.length===10||phone.length===11)phone='55'+phone;
-
-  const lines=getReservationLines(r).map(line=>{
-    if(line.type==='avulso'){
-      return (line.parts||[]).map(p=>{
-        const item=db.items.find(x=>x.id===p.itemId);
-        return `${p.qty}x ${item?.name||'Peça'}`;
-      }).join(', ');
-    }
-    const k=db.kits.find(x=>x.id==line.kitId);
-    return `${line.type==='mesa'?'Kit Festa na Mesa':'Kit'}: ${k?.name||'-'}`;
-  }).filter(Boolean);
-
-  const saldo=Math.max(0,(+r.value||0)-(+r.paid||0));
-  const msg=[
-    `Olá, ${c.name||''}! 😊`,
-    `Segue o contrato de locação da P&M Bellpapell.`,
-    ``,
-    `Tema: ${r.theme||'-'}`,
-    `Data do evento: ${formatDateBR(r.date)}`,
-    lines.length?`Locações: ${lines.join(' | ')}`:null,
-    `Valor total: ${money(r.value)}`,
-    `Valor recebido: ${money(r.paid)}`,
-    `Saldo: ${money(saldo)}`,
-    ``,
-    `O contrato completo está disponível no ERP para impressão/salvamento em PDF.`
-  ].filter(Boolean).join('\n');
-
-  const url='https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
-  const w=window.open(url,'_blank');
-  if(!w)window.location.href=url;
-}
-
 function filterTable(input,id){let q=input.value.toLowerCase();document.querySelectorAll('#'+id+' tr').forEach((r,i)=>{if(i)r.style.display=r.innerText.toLowerCase().includes(q)?'':'none'})}
 render();renderCalendar();renderFinance();renderDeliveryKPIs();renderAlerts();if(typeof loadAdmin==='function')loadAdmin();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(err){
+      console.warn('Service Worker não registrado:',err);
+    });
+  });
+}
 </script>
 </body></html>
