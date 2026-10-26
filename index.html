@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="P&M ERP">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>P&M Bellpapell ERP • V22.1 • PONTE TESTE</title>
+<title>P&M Bellpapell ERP • V22.6 • Legenda de status</title>
 <style>
 :root{--navy:#182b49;--pink:#d98aa8;--blue:#b9d8ed;--gold:#c8a96b;--bg:#f7f5f6;--white:#fff;--text:#26313d;--muted:#78818d;--green:#4d956f;--red:#bd5962;--orange:#c9873d}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}.app{display:flex;min-height:100vh}.side{position:fixed;inset:0 auto 0 0;width:235px;background:var(--navy);color:#fff;padding:22px 14px}.logo{width:58px;height:58px;border:2px solid var(--gold);border-radius:50%;margin:auto;display:grid;place-items:center;background:linear-gradient(145deg,#f7cbd9,#c8dfef);color:var(--navy);font-weight:bold}.logo.real-logo{border:0;background:transparent;overflow:hidden;width:72px;height:72px}
@@ -17,7 +17,7 @@
 .brand{font-size:17px}
 .brand span{color:#f0a3bc}
 .company-contact{font-size:11px;color:#d7dce5;text-align:center;line-height:1.5;margin:10px 2px 18px}
-.brand{text-align:center;margin:9px 0 3px;font:18px Georgia}.brand span{color:#f0a3bc}.tag{text-align:center;font-size:10px;color:#d7dce5;margin-bottom:22px}.nav{display:grid;gap:4px}.nav button{border:0;background:transparent;color:#fff;text-align:left;padding:11px;border-radius:9px;cursor:pointer}.nav button:hover,.nav button.active{background:#ffffff18}.main{margin-left:235px;width:calc(100% - 235px);padding:26px;max-width:1450px}header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:20px}h1{margin:0;font-size:25px}.sub{color:var(--muted);font-size:13px;margin-top:4px}.btn{border:0;border-radius:9px;padding:11px 15px;font-weight:bold;cursor:pointer}.primary{background:var(--pink);color:#fff}.light{background:#fff;border:1px solid #ddd;color:var(--navy)}.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card,.panel{background:#fff;border-radius:14px;padding:17px;box-shadow:0 3px 14px #1e28370b}.label{font-size:11px;color:var(--muted)}.kpi{font-size:25px;font-weight:bold;color:var(--navy);margin:7px 0}.section{margin-top:17px}.two{display:grid;grid-template-columns:2fr 1fr;gap:15px}.title{font-weight:bold;margin-bottom:12px}.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{padding:11px 7px;border-bottom:1px solid #eee;text-align:left}.table th{font-size:10px;color:var(--muted);text-transform:uppercase}.badge{display:inline-block;padding:5px 8px;border-radius:20px;font-size:10px;font-weight:bold;background:#edf0f3}.status-confirmada{background:#e5f3eb;color:#2d704e}.status-pendente{background:#fff0dc;color:#9b5e1c}.status-cancelada{background:#f8e2e5;color:#a23e48}.status-contrato{background:#e4eefb;color:#315f91}.ok{background:#e5f3eb;color:#2d704e}.warn{background:#fff0dc;color:#9b5e1c}.bad{background:#f8e2e5;color:#a23e48}.modal{display:none;position:fixed;inset:0;background:#17233b80;align-items:center;justify-content:center;padding:20px;z-index:5}.modal.show{display:flex}.modalbox{background:#fff;width:min(700px,100%);max-height:90vh;overflow:auto;border-radius:16px;padding:22px}.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font:inherit}.full{grid-column:1/-1}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.kit{border:1px solid #eee;border-radius:11px;padding:13px;margin-bottom:9px}.kit h3{margin:0 0 5px;font-size:15px}.muted{color:var(--muted);font-size:12px}.search{padding:10px;border:1px solid #ddd;border-radius:8px;width:240px}.alert{padding:11px;border-radius:9px;background:#fff5e8;margin:7px 0;font-size:12px}.success{padding:11px;border-radius:9px;background:#e8f5ed;color:#286c49;font-size:12px}.danger{padding:11px;border-radius:9px;background:#fae6e8;color:#9f414a;font-size:12px}
+.brand{text-align:center;margin:9px 0 3px;font:18px Georgia}.brand span{color:#f0a3bc}.tag{text-align:center;font-size:10px;color:#d7dce5;margin-bottom:22px}.nav{display:grid;gap:4px}.nav button{border:0;background:transparent;color:#fff;text-align:left;padding:11px;border-radius:9px;cursor:pointer}.nav button:hover,.nav button.active{background:#ffffff18}.main{margin-left:235px;width:calc(100% - 235px);padding:26px;max-width:1450px}header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:20px}h1{margin:0;font-size:25px}.sub{color:var(--muted);font-size:13px;margin-top:4px}.btn{border:0;border-radius:9px;padding:11px 15px;font-weight:bold;cursor:pointer}.primary{background:var(--pink);color:#fff}.light{background:#fff;border:1px solid #ddd;color:var(--navy)}.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card,.panel{background:#fff;border-radius:14px;padding:17px;box-shadow:0 3px 14px #1e28370b}.label{font-size:11px;color:var(--muted)}.kpi{font-size:25px;font-weight:bold;color:var(--navy);margin:7px 0}.section{margin-top:17px}.two{display:grid;grid-template-columns:2fr 1fr;gap:15px}.title{font-weight:bold;margin-bottom:12px}.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{padding:11px 7px;border-bottom:1px solid #eee;text-align:left}.table th{font-size:10px;color:var(--muted);text-transform:uppercase}.badge{display:inline-block;padding:5px 8px;border-radius:20px;font-size:10px;font-weight:bold;background:#edf0f3}.status-confirmada{background:#e5f3eb;color:#2d704e}.status-pendente{background:#fff0dc;color:#9b5e1c}.status-cancelada{background:#f8e2e5;color:#a23e48}.status-realizada{background:#e8e8ec;color:#5c6370}.status-contrato{background:#e4eefb;color:#315f91}.ok{background:#e5f3eb;color:#2d704e}.warn{background:#fff0dc;color:#9b5e1c}.bad{background:#f8e2e5;color:#a23e48}.modal{display:none;position:fixed;inset:0;background:#17233b80;align-items:center;justify-content:center;padding:20px;z-index:5}.modal.show{display:flex}.modalbox{background:#fff;width:min(700px,100%);max-height:90vh;overflow:auto;border-radius:16px;padding:22px}.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font:inherit}.full{grid-column:1/-1}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.kit{border:1px solid #eee;border-radius:11px;padding:13px;margin-bottom:9px}.kit h3{margin:0 0 5px;font-size:15px}.muted{color:var(--muted);font-size:12px}.search{padding:10px;border:1px solid #ddd;border-radius:8px;width:240px}.alert{padding:11px;border-radius:9px;background:#fff5e8;margin:7px 0;font-size:12px}.success{padding:11px;border-radius:9px;background:#e8f5ed;color:#286c49;font-size:12px}.danger{padding:11px;border-radius:9px;background:#fae6e8;color:#9f414a;font-size:12px}
 .calendar-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
 .calendar-head h2{margin:0;color:var(--navy);font-size:20px;text-transform:capitalize}
 .cal-actions{display:flex;gap:7px}
@@ -132,7 +132,7 @@
  .contract-paper{max-height:none!important;overflow:visible!important;border:0!important}
 }
 
-/* V22.1 - correção exclusiva da Agenda no celular. Mantém a lógica da V22. */
+/* V22.4 - alertas inteligentes de estoque, além dos ajustes anteriores. */
 @media(max-width:560px){
   .agenda-toolbar{width:100%;gap:8px}
   .calendar-head{width:100%;gap:6px;align-items:center}
@@ -194,7 +194,7 @@
 <div class="agenda-filters"><select id="agendaStatusFilter" onchange="renderCalendar()"><option value="Todos">Todos os status</option><option value="Confirmada">🟢 Confirmada</option><option value="Pendente">🟡 Pendente</option><option value="Contrato gerado">🔵 Contrato gerado</option></select><input id="agendaSearch" placeholder="🔎 Cliente, tema ou kit..." oninput="renderCalendar()"></div>
 </div>
 <div class="cal-grid" id="calendarGrid"></div>
-<div class="legend"><span class="status-confirmada">🟢 Confirmada</span><span class="status-pendente">🟡 Pendente</span><span class="status-contrato">🔵 Contrato gerado</span></div>
+<div class="legend"><span class="status-confirmada">🟢 Confirmada</span><span class="status-pendente">🟡 Pendente</span><span class="status-contrato">🔵 Contrato gerado</span><span class="status-realizada">⚪ Realizada</span><span class="status-cancelada">🔴 Cancelada</span></div>
 <div class="agenda-summary" id="agendaSummary"></div>
 </div></section>
 
@@ -340,9 +340,10 @@
 <div class="field full"><label>Locações desta reserva</label><div id="reservationLines"></div><button class="btn light" type="button" onclick="addReservationLine()">➕ Adicionar locação</button><div class="muted" style="margin-top:7px">Você pode combinar Kit, Kit Festa na Mesa e Peças avulsas na mesma reserva.</div></div>
 <div class="field full"><label>👤 Cliente</label><select id="rClient" onchange="checkReservation()"><option value="">Selecione o cliente</option></select></div>
 <div class="field"><label>Data do evento</label><input id="rDate" type="date" onchange="checkReservation()"></div><div class="field"><label>Tema da festa</label><input id="rTheme" placeholder="Ex.: Jardim Encantado"></div>
-<div class="field"><label>Entrega</label><input id="rDelivery" type="date"></div><div class="field"><label>Devolução</label><input id="rReturn" type="date"></div>
-<div class="field"><label>Valor</label><input id="rValue" readonly></div>
-<div class="field"><label>Entrada recebida</label><input id="rPaid" type="number" step=".01" value="0"></div><div class="field"><label>Status</label><select id="rStatus"><option value="Confirmada">🟢 Confirmada</option><option value="Pendente">🟡 Pendente</option><option value="Cancelada">🔴 Cancelada</option><option value="Contrato gerado">🔵 Contrato gerado</option></select></div><div class="field full"><label>Observação</label><input id="rObs"></div>
+<div class="field"><label>Retirada/entrega</label><input id="rDelivery" type="date" onchange="updatePaymentSummary()"></div><div class="field"><label>Devolução</label><input id="rReturn" type="date"></div>
+<div class="field"><label>Valor total da reserva</label><input id="rValue" readonly></div>
+<div class="field"><label>Entrada recebida (padrão: 50%)</label><input id="rPaid" type="number" min="0" step=".01" value="0" oninput="this.dataset.userEdited='1';updatePaymentSummary()"></div><div class="field"><label>Status</label><select id="rStatus"><option value="Confirmada">🟢 Confirmada</option><option value="Pendente">🟡 Pendente</option><option value="Realizada">✅ Realizada</option><option value="Cancelada">🔴 Cancelada</option><option value="Contrato gerado">🔵 Contrato gerado</option></select></div><div class="field full"><div class="finance-total-box" id="reservationPaymentSummary">💳 Informe as locações para calcular a entrada de 50% e o saldo previsto para a retirada.</div><button type="button" class="btn light" style="margin-top:8px" onclick="applySuggestedEntry()">Aplicar entrada sugerida de 50%</button></div>
+<div class="field full"><label>Observação</label><input id="rObs"></div>
 <div class="field full" id="stockCheck"><div class="muted">Selecione o kit e a data para verificar o estoque.</div></div>
 </div><div class="actions"><button class="btn light" onclick="closeModal('reservation')">Cancelar</button><button class="btn light" id="deleteReservationBtn" style="display:none" onclick="deleteReservation(editingReservationId)">🗑️ Excluir</button><button type="button" class="btn primary" id="saveReservationBtn" onclick="saveReservation(event)">Confirmar reserva</button></div></div></div>
 
@@ -791,7 +792,7 @@ function lineLabel(line){
 }
 function linesSummary(r){return getReservationLines(r).map(line=>lineLabel(line)).join(' + ')||'-'}
 function reservedQty(itemId,date,ignoreId=null){
-  return db.reservations.filter(r=>r.date===date&&r.status!=='Cancelada'&&r.id!==ignoreId).reduce((sum,r)=>{
+  return db.reservations.filter(r=>r.date===date&&r.status!=='Cancelada'&&r.status!=='Realizada'&&r.id!==ignoreId).reduce((sum,r)=>{
     getReservationLines(r).forEach(line=>{
       if(line.type==='avulso'){
         (line.parts||[]).forEach(p=>{if(+p.itemId===+itemId)sum+=Number(p.qty)||0});
@@ -846,6 +847,14 @@ function getReservationLinesFromForm(){
     return {type,kitId:+(wrap.querySelector('.reservation-line-kit')?.value||0)};
   });
 }
+function updatePaymentSummary(){
+  const total=Math.max(0,+document.getElementById('rValue').value||0),paid=Math.max(0,+document.getElementById('rPaid').value||0),suggested=Math.round(total*50)/100,saldo=Math.max(0,total-paid);
+  const withdrawal=document.getElementById('rDelivery').value||document.getElementById('rDate').value;
+  const dateText=withdrawal?new Date(withdrawal+'T12:00:00').toLocaleDateString('pt-BR'):'data da retirada';
+  const box=document.getElementById('reservationPaymentSummary');
+  if(box)box.innerHTML='💰 <b>Valor total:</b> '+money(total)+'<br>🟡 <b>Entrada sugerida (50%):</b> '+money(suggested)+'<br>✅ <b>Entrada informada/recebida:</b> '+money(paid)+'<br>🔴 <b>Saldo restante:</b> '+money(saldo)+'<br>📅 <b>Previsão para pagar o saldo:</b> '+dateText+' (dia da retirada).';
+}
+function applySuggestedEntry(){const total=Math.max(0,+document.getElementById('rValue').value||0);document.getElementById('rPaid').value=(Math.round(total*50)/100).toFixed(2);document.getElementById('rPaid').dataset.userEdited='1';updatePaymentSummary();}
 function checkReservation(){
   const date=document.getElementById('rDate').value,stock=document.getElementById('stockCheck');stock.innerHTML='';
   if(!date){stock.innerHTML='<div class="muted">Selecione a data do evento para verificar o estoque.</div>';return false}
@@ -862,17 +871,19 @@ function checkReservation(){
     }
   });
   rValue.value=valid?total.toFixed(2):'';
+  const paidInput=document.getElementById('rPaid');if(!editingReservationId&&paidInput.dataset.userEdited!=='1'&&valid){paidInput.value=(Math.round(total*50)/100).toFixed(2)}
+  updatePaymentSummary();
   Object.entries(grouped).forEach(([id,qty])=>{const item=db.items.find(i=>i.id==id),available=(item?.qty||0)-reservedQty(+id,date,editingReservationId);if(available<qty)problems.push(`${item?.name||'Peça'}: precisa ${qty}, disponível ${available}`)});
   if(problems.length){stock.innerHTML='<div class="danger"><b>🚨 '+(valid?'Conflito de estoque':'Verifique as locações')+'</b><br>'+problems.join('<br>')+'</div>';return false}
   stock.innerHTML='<div class="success">🟢 '+lines.length+' locação(ões) selecionada(s). Total: <b>'+money(total)+'</b></div>';return true;
 }
 function fillReservation(){
-  rClient.innerHTML=db.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');rDate.value='';rTheme.value='';rDelivery.value='';rReturn.value='';rPaid.value=0;rValue.value='';rStatus.value='Confirmada';rObs.value='';document.getElementById('reservationLines').innerHTML='';addReservationLine({type:'kit',kitId:''});stockCheck.innerHTML='<div class="muted">Selecione a data do evento para verificar o estoque.</div>';
+  rClient.innerHTML=db.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');rDate.value='';rTheme.value='';rDelivery.value='';rReturn.value='';rPaid.value=0;rPaid.dataset.userEdited='';rValue.value='';rStatus.value='Confirmada';updatePaymentSummary();rObs.value='';document.getElementById('reservationLines').innerHTML='';addReservationLine({type:'kit',kitId:''});stockCheck.innerHTML='<div class="muted">Selecione a data do evento para verificar o estoque.</div>';
 }
 let editingReservationId=null;
 function openReservationModal(id=null){
   editingReservationId=id;const title=document.getElementById('reservationModalTitle'),btn=document.getElementById('saveReservationBtn');fillReservation();
-  if(id){const r=db.reservations.find(x=>x.id===id);if(!r)return;document.getElementById('rClient').value=r.clientId||'';document.getElementById('rDate').value=r.date||'';document.getElementById('rTheme').value=r.theme||'';document.getElementById('rDelivery').value=r.delivery||'';document.getElementById('rReturn').value=r.returnDate||'';document.getElementById('rPaid').value=r.paid||0;document.getElementById('rStatus').value=r.status||'Confirmada';document.getElementById('rObs').value=r.obs||'';document.getElementById('reservationLines').innerHTML='';getReservationLines(r).forEach(line=>renderReservationLine(line));title.textContent='Editar reserva';btn.textContent='Salvar alterações';document.getElementById('deleteReservationBtn').style.display='inline-block';document.getElementById('reservation').classList.add('show');checkReservation();}
+  if(id){const r=db.reservations.find(x=>x.id===id);if(!r)return;document.getElementById('rClient').value=r.clientId||'';document.getElementById('rDate').value=r.date||'';document.getElementById('rTheme').value=r.theme||'';document.getElementById('rDelivery').value=r.delivery||'';document.getElementById('rReturn').value=r.returnDate||'';document.getElementById('rPaid').value=r.paid||0;document.getElementById('rPaid').dataset.userEdited='1';document.getElementById('rStatus').value=r.status||'Confirmada';document.getElementById('rObs').value=r.obs||'';document.getElementById('reservationLines').innerHTML='';getReservationLines(r).forEach(line=>renderReservationLine(line));title.textContent='Editar reserva';btn.textContent='Salvar alterações';document.getElementById('deleteReservationBtn').style.display='inline-block';document.getElementById('reservation').classList.add('show');checkReservation();updatePaymentSummary();}
   else{title.textContent='Nova reserva';btn.textContent='Salvar';document.getElementById('deleteReservationBtn').style.display='none';openModal('reservation');}
 }
 function deleteReservation(id){
@@ -938,6 +949,7 @@ function openClientHistory(id){
   const statusHistorico=r=>{
     const st=r.status||'Confirmada';
     if(st==='Cancelada')return 'Cancelada';
+    if(st==='Realizada')return 'Realizada';
     const d=new Date(r.date+'T12:00:00');d.setHours(0,0,0,0);
     return d<today?'Realizada':'Próxima';
   };
@@ -953,7 +965,7 @@ function openClientHistory(id){
 function renderDelivery(mode='entrega'){
   const key=mode==='devolucao'?'returnDate':'delivery',tbody=document.getElementById('deliveryTable');if(!tbody)return;
   const today=new Date();today.setHours(0,0,0,0);
-  const rows=db.reservations.filter(r=>r[key]&&(r.status||'Confirmada')!=='Cancelada').slice().sort((a,b)=>String(a[key]).localeCompare(String(b[key])));
+  const rows=db.reservations.filter(r=>r[key]&&(r.status||'Confirmada')!=='Cancelada'&&(r.status||'Confirmada')!=='Realizada').slice().sort((a,b)=>String(a[key]).localeCompare(String(b[key])));
   tbody.innerHTML=rows.length?rows.map(r=>{
     const c=db.clients.find(x=>x.id===r.clientId),d=new Date(r[key]+'T12:00:00');d.setHours(0,0,0,0),late=mode==='devolucao'&&d<today;
     return `<tr><td>${formatDateBR(r[key])}</td><td>${c?.name||'-'}</td><td>${r.theme||'-'}</td><td>${linesSummary(r)}</td><td><span class="badge ${late?'bad':'ok'}">${late?'⚠ Atrasada':(r.status||'Confirmada')}</span></td><td><button class="btn light" type="button" onclick="openReservationModal(${r.id})">✏️ Reserva</button></td></tr>`;
@@ -962,7 +974,7 @@ function renderDelivery(mode='entrega'){
 function renderDeliveryKPIs(){
   const d=document.getElementById('deliveryToday');if(!d)return;
   const t=new Date();t.setHours(0,0,0,0),iso=t.toISOString().slice(0,10),f=new Date(t);f.setDate(f.getDate()+7);
-  const a=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada');
+  const a=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada'&&(r.status||'Confirmada')!=='Realizada');
   deliveryToday.textContent=a.filter(r=>r.delivery===iso).length;returnToday.textContent=a.filter(r=>r.returnDate===iso).length;
   deliveryNext.textContent=a.filter(r=>r.delivery&&new Date(r.delivery+'T12:00:00')>t&&new Date(r.delivery+'T12:00:00')<=f).length;
   returnLate.textContent=a.filter(r=>r.returnDate&&new Date(r.returnDate+'T12:00:00')<t).length;
@@ -972,13 +984,46 @@ function renderAlerts(){
   const t=new Date();t.setHours(0,0,0,0),iso=t.toISOString().slice(0,10),tm=new Date(t);tm.setDate(tm.getDate()+1),tomorrow=tm.toISOString().slice(0,10),a=[];
   db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada').forEach(r=>{
     const c=db.clients.find(x=>x.id===r.clientId),n=c?.name||'Cliente',saldo=(+r.value||0)-(+r.paid||0);
-    if(r.delivery===iso)a.push(`<div class="alert-item info">🚚 <strong>Entrega hoje:</strong> ${n}</div>`);
-    if(r.returnDate===iso)a.push(`<div class="alert-item warning">📦 <strong>Devolução hoje:</strong> ${n}</div>`);
-    if(r.returnDate&&new Date(r.returnDate+'T12:00:00')<t)a.push(`<div class="alert-item danger">⚠️ <strong>Devolução atrasada:</strong> ${n}</div>`);
-    if(r.date===tomorrow)a.push(`<div class="alert-item info">📅 <strong>Evento amanhã:</strong> ${n}</div>`);
+    if((r.status||'Confirmada')!=='Realizada'&&r.delivery===iso)a.push(`<div class="alert-item info">🚚 <strong>Entrega hoje:</strong> ${n}</div>`);
+    if((r.status||'Confirmada')!=='Realizada'&&r.returnDate===iso)a.push(`<div class="alert-item warning">📦 <strong>Devolução hoje:</strong> ${n}</div>`);
+    if((r.status||'Confirmada')!=='Realizada'&&r.returnDate&&new Date(r.returnDate+'T12:00:00')<t)a.push(`<div class="alert-item danger">⚠️ <strong>Devolução atrasada:</strong> ${n}</div>`);
+    if((r.status||'Confirmada')!=='Realizada'&&r.date===tomorrow)a.push(`<div class="alert-item info">📅 <strong>Evento amanhã:</strong> ${n}</div>`);
     if(saldo>0&&r.date&&new Date(r.date+'T12:00:00')>=t)a.push(`<div class="alert-item warning">💰 <strong>Saldo a receber:</strong> ${n} • ${money(saldo)}</div>`);
   });
-  db.items.forEach(i=>{if((+i.qty||0)<2)a.push('<div class="alert-item danger">📦 <strong>Estoque baixo:</strong> '+(i.name||'Item')+'</div>');});
+  // V22.5: verificar a disponibilidade durante TODO o período entre retirada e devolução.
+  // A data de devolução é considerada ocupada; o item só volta a ficar livre depois dela.
+  // Não avisar apenas porque o acervo tem uma unidade: avisar quando reservas sobrepostas
+  // precisarem de mais unidades do que o estoque cadastrado.
+  const reservasAtivas=db.reservations.filter(r=>!['Cancelada','Realizada'].includes(r.status||'Confirmada'));
+  const isoDate=v=>{if(!v)return '';const d=new Date(v+'T12:00:00');return isNaN(d)?'':d.toISOString().slice(0,10)};
+  const rangeFor=r=>{
+    const start=isoDate(r.delivery)||isoDate(r.date);
+    const end=isoDate(r.returnDate)||start||isoDate(r.date);
+    if(!start||!end)return null;
+    return start<=end?{start,end}:{start:end,end:start};
+  };
+  const ranges=reservasAtivas.map(r=>({r,range:rangeFor(r)})).filter(x=>x.range);
+  const dayList=(start,end)=>{const out=[];const d=new Date(start+'T12:00:00'),last=new Date(end+'T12:00:00');for(let guard=0;d<=last&&guard<370;guard++,d.setDate(d.getDate()+1))out.push(d.toISOString().slice(0,10));return out};
+  const allDays=[...new Set(ranges.flatMap(x=>dayList(x.range.start,x.range.end)))].sort();
+  const itemPeak={};
+  allDays.forEach(data=>{
+    const totals={};
+    ranges.filter(x=>x.range.start<=data&&data<=x.range.end).forEach(({r})=>getReservationLines(r).forEach(line=>{
+      let parts=[];
+      if(line.type==='avulso') parts=line.parts||[];
+      else {const kit=db.kits.find(k=>+k.id===+line.kitId);parts=kit?.parts||[];}
+      parts.forEach(part=>{const id=+part.itemId;if(!id)return;totals[id]=(totals[id]||0)+((+part.qty||0)*(+line.qty||1));});
+    }));
+    Object.entries(totals).forEach(([id,needed])=>{
+      const item=db.items.find(i=>+i.id===+id);if(!item)return;
+      const stock=Number(item.qty)||0;
+      if(needed>stock&&(!itemPeak[id]||needed>itemPeak[id].needed))itemPeak[id]={needed,stock,date:data};
+    });
+  });
+  Object.entries(itemPeak).forEach(([id,info])=>{
+    const item=db.items.find(i=>+i.id===+id);if(!item)return;
+    a.push(`<div class="alert-item danger">📦 <strong>Estoque insuficiente no período:</strong> ${item.name||'Item'} • ${formatDateBR(info.date)} • reservas precisam ${info.needed}, estoque ${info.stock}</div>`);
+  });
   if(box)box.innerHTML=a.length?a.slice(0,10).join(''):'<div class="alert-item">✓ Nenhum alerta importante no momento.</div>';
 }
 
@@ -986,12 +1031,12 @@ function render(){
 document.getElementById('kpiRes').textContent=db.reservations.length;document.getElementById('kpiCli').textContent=db.clients.length;document.getElementById('kpiItens').textContent=db.items.length;
 let activeReservations=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada');let due=activeReservations.reduce((s,r)=>s+(+r.value||0)-(+r.paid||0),0);document.getElementById('kpiReceber').textContent=money(due);
 document.getElementById('finTotal').textContent=money(activeReservations.reduce((s,r)=>s+(+r.value||0),0));document.getElementById('finPaid').textContent=money(activeReservations.reduce((s,r)=>s+(+r.paid||0),0));document.getElementById('finDue').textContent=money(due);
-let rows=db.reservations.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{let c=db.clients.find(x=>x.id===r.clientId);let st=r.status||'Confirmada';let cls=st==='Confirmada'?'status-confirmada':st==='Pendente'?'status-pendente':st==='Cancelada'?'status-cancelada':'status-contrato';return `<tr><td>${new Date(r.date+'T12:00:00').toLocaleDateString('pt-BR')}</td><td>${c?.name||'-'}</td><td>${r.theme||'-'}</td><td>${linesSummary(r)}</td><td>${r.delivery?new Date(r.delivery+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${r.returnDate?new Date(r.returnDate+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${money(r.value)}</td><td><span class="badge ${cls}">${st==='Confirmada'?'🟢 ':st==='Pendente'?'🟡 ':st==='Cancelada'?'🔴 ':'🔵 '}${st}</span></td><td><button class="btn light" type="button" onclick="openReservationModal(${r.id})">✏️ Editar</button></td></tr>`}).join('')||'<tr><td colspan="9" class="muted">Nenhuma reserva cadastrada.</td></tr>';
+let rows=db.reservations.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{let c=db.clients.find(x=>x.id===r.clientId);let st=r.status||'Confirmada';let cls=st==='Confirmada'||st==='Realizada'?'status-confirmada':st==='Pendente'?'status-pendente':st==='Cancelada'?'status-cancelada':'status-contrato';return `<tr><td>${new Date(r.date+'T12:00:00').toLocaleDateString('pt-BR')}</td><td>${c?.name||'-'}</td><td>${r.theme||'-'}</td><td>${linesSummary(r)}</td><td>${r.delivery?new Date(r.delivery+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${r.returnDate?new Date(r.returnDate+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${money(r.value)}</td><td><span class="badge ${cls}">${st==='Confirmada'?'🟢 ':st==='Pendente'?'🟡 ':st==='Realizada'?'✅ ':st==='Cancelada'?'🔴 ':'🔵 '}${st}</span></td><td><button class="btn light" type="button" onclick="openReservationModal(${r.id})">✏️ Editar</button></td></tr>`}).join('')||'<tr><td colspan="9" class="muted">Nenhuma reserva cadastrada.</td></tr>';
 reservationTable.innerHTML=rows;dashReservations.innerHTML=rows||'<tr><td>Nenhuma reserva.</td></tr>';
 clientTable.innerHTML=db.clients.map(c=>`<tr><td>${c.name}</td><td>${c.phone||'-'}</td><td>${c.cpf||'-'}</td><td>${c.address||'-'}</td><td><button class="btn light" type="button" onclick="openClientModal(${c.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="openClientHistory(${c.id})">📋 Histórico</button></td></tr>`).join('');
-itemTable.innerHTML=db.items.map(i=>{let used=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada').reduce((sum,r)=>sum+getReservationLines(r).reduce((ls,line)=>{if(line.type==='avulso')return ls+(line.parts||[]).filter(p=>+p.itemId===+i.id).reduce((a,p)=>a+(+p.qty||0),0);const k=db.kits.find(x=>x.id==line.kitId);return ls+(k?.parts||[]).filter(p=>+p.itemId===+i.id).reduce((a,p)=>a+(+p.qty||0),0)},0),0);let avail=i.qty-used;return `<tr><td>${i.name}</td><td>${i.qty}</td><td>${used}</td><td><b>${avail}</b></td><td>${money(i.price||0)}</td><td><span class="badge ${avail>0?'ok':'bad'}">${avail>0?'Disponível':'Indisponível'}</span></td><td><button class="btn light" type="button" onclick="openItemModal(${i.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="deleteItem(${i.id})">🗑️ Excluir</button></td></tr>`}).join('');
+itemTable.innerHTML=db.items.map(i=>{let used=db.reservations.filter(r=>(r.status||'Confirmada')!=='Cancelada'&&(r.status||'Confirmada')!=='Realizada').reduce((sum,r)=>sum+getReservationLines(r).reduce((ls,line)=>{if(line.type==='avulso')return ls+(line.parts||[]).filter(p=>+p.itemId===+i.id).reduce((a,p)=>a+(+p.qty||0),0);const k=db.kits.find(x=>x.id==line.kitId);return ls+(k?.parts||[]).filter(p=>+p.itemId===+i.id).reduce((a,p)=>a+(+p.qty||0),0)},0),0);let avail=i.qty-used;return `<tr><td>${i.name}</td><td>${i.qty}</td><td>${used}</td><td><b>${avail}</b></td><td>${money(i.price||0)}</td><td><span class="badge ${avail>0?'ok':'bad'}">${avail>0?'Disponível':'Indisponível'}</span></td><td><button class="btn light" type="button" onclick="openItemModal(${i.id})">✏️ Editar</button> <button class="btn light" type="button" onclick="deleteItem(${i.id})">🗑️ Excluir</button></td></tr>`}).join('');
 kitList.innerHTML=db.kits.map(k=>`<div class="panel kit"><h3>🎀 ${k.name}</h3><div class="muted">${money(k.price)}</div><p>${k.parts.map(p=>{let i=db.items.find(x=>x.id===p.itemId);return `${p.qty}× ${i?.name||'item removido'}`}).join(' • ')}</p><div class="actions"><button class="btn light" type="button" onclick="openKitModal(${k.id})">✏️ Editar kit</button></div></div>`).join('');
-let alerts=[];db.items.forEach(i=>{if(i.qty<2)alerts.push(`⚠️ ${i.name}: estoque baixo.`)});alertsEl=document.getElementById('alerts');alertsEl.innerHTML=alerts.length?alerts.map(x=>`<div class="alert">${x}</div>`).join(''):'<div class="muted">Nenhum alerta.</div>';
+let alerts=[];alertsEl=document.getElementById('alerts');alertsEl.innerHTML='<div class="muted">Os alertas de estoque aparecem quando uma reserva ativa precisa de mais unidades do que o acervo possui.</div>';
 }
 
 let calendarCursor = new Date();
@@ -1008,7 +1053,7 @@ function renderCalendar(){
   const grid=document.getElementById('calendarGrid'),title=document.getElementById('calendarTitle');if(!grid||!title)return;
   const y=calendarCursor.getFullYear(),m=calendarCursor.getMonth();title.textContent=new Date(y,m,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
   const filter=document.getElementById('agendaStatusFilter')?.value||'Todos',query=(document.getElementById('agendaSearch')?.value||'').toLowerCase().trim();
-  const matches=r=>{const st=r.status||'Confirmada';if(st==='Cancelada')return false;if(filter!=='Todos'&&st!==filter)return false;if(!query)return true;const c=db.clients.find(x=>x.id===r.clientId);return ((c?.name||'')+' '+(r.theme||'')+' '+linesSummary(r)).toLowerCase().includes(query)};
+  const matches=r=>{const st=r.status||'Confirmada';if(st==='Cancelada'||st==='Realizada')return false;if(filter!=='Todos'&&st!==filter)return false;if(!query)return true;const c=db.clients.find(x=>x.id===r.clientId);return ((c?.name||'')+' '+(r.theme||'')+' '+linesSummary(r)).toLowerCase().includes(query)};
   const startDay=(new Date(y,m,1).getDay()+6)%7,total=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate(),weekdays=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];let out=weekdays.map(x=>'<div class="cal-week">'+x+'</div>');const today=new Date();today.setHours(0,0,0,0);
   for(let i=0;i<42;i++){let d=i-startDay+1,dt,other=false;if(d<1){dt=new Date(y,m-1,prev+d);other=true}else if(d>total){dt=new Date(y,m+1,d-total);other=true}else dt=new Date(y,m,d);const iso=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');const rs=db.reservations.filter(r=>r.date===iso&&matches(r));const events=rs.map(r=>{const c=db.clients.find(x=>x.id===r.clientId),st=r.status||'Confirmada';const label=(c?.name||'Cliente')+' • '+(r.theme||linesSummary(r)||'Reserva');return '<div class="cal-event '+statusClass(st)+'" onclick="event.stopPropagation();openReservationDetails('+r.id+')">'+label+'</div>'}).join('');out.push('<div class="cal-day '+(other?'other ':'')+(dt.getTime()===today.getTime()?'today':'')+'" onclick="newReservationFor(\''+iso+'\')"><div class="cal-num">'+dt.getDate()+'</div>'+events+'</div>')}
   grid.innerHTML=out.join('');const summary=document.getElementById('agendaSummary');if(summary){const totalMonth=db.reservations.filter(r=>{const dt=new Date(r.date+'T12:00:00');return dt.getFullYear()===y&&dt.getMonth()===m&&matches(r)}).length;summary.innerHTML='📅 <b>'+totalMonth+'</b> reserva(s) neste mês'+(filter!=='Todos'?' • filtro: <b>'+filter+'</b>':'')+(query?' • busca: <b>'+query+'</b>':'')}
@@ -1034,7 +1079,7 @@ function newReservationFor(date){
 function openReservationDetails(id){
   const r=db.reservations.find(x=>x.id===id);if(!r)return;const c=db.clients.find(x=>x.id===r.clientId)||{},st=r.status||'Confirmada';const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'-';const saldo=Math.max(0,(+r.value||0)-(+r.paid||0));const modal=document.getElementById('reservationDetails');if(!modal)return;
   const lines=getReservationLines(r).map((line,i)=>{if(line.type==='avulso')return '<b>'+(i+1)+'. 📦 Peças avulsas</b><br>'+((line.parts||[]).map(p=>{const item=db.items.find(x=>x.id===p.itemId);return (p.qty||0)+'× '+(item?.name||'Peça')+' • '+money((item?.price||0)*(p.qty||0))}).join('<br>')||'Nenhuma peça selecionada');const k=db.kits.find(x=>x.id==line.kitId);return '<b>'+(i+1)+'. '+(line.type==='mesa'?'🎉 Kit Festa na Mesa':'🎀 Kit')+'</b>: '+(k?.name||'-')+' • '+money(k?.price||0)}).join('<br><br>');
-  document.getElementById('reservationDetailsContent').innerHTML='<div class="details-grid"><div><span class="label">Cliente</span><strong>'+(c.name||'-')+'</strong></div><div><span class="label">WhatsApp</span><strong>'+(c.phone||'-')+'</strong></div><div><span class="label">CPF</span><strong>'+(c.cpf||'-')+'</strong></div><div><span class="label">Tema</span><strong>'+(r.theme||'-')+'</strong></div><div class="full"><span class="label">Locações</span><strong>'+lines+'</strong></div><div><span class="label">Evento</span><strong>'+fmt(r.date)+'</strong></div><div><span class="label">Entrega</span><strong>'+fmt(r.delivery)+'</strong></div><div><span class="label">Devolução</span><strong>'+fmt(r.returnDate)+'</strong></div><div><span class="label">Status</span><strong>'+st+'</strong></div><div><span class="label">Valor</span><strong>'+money(r.value)+'</strong></div><div><span class="label">Entrada</span><strong>'+money(r.paid)+'</strong></div><div><span class="label">Saldo</span><strong>'+money(saldo)+'</strong></div><div class="full"><span class="label">Observação</span><strong>'+(r.obs||'-')+'</strong></div></div>';
+  document.getElementById('reservationDetailsContent').innerHTML='<div class="details-grid"><div><span class="label">Cliente</span><strong>'+(c.name||'-')+'</strong></div><div><span class="label">WhatsApp</span><strong>'+(c.phone||'-')+'</strong></div><div><span class="label">CPF</span><strong>'+(c.cpf||'-')+'</strong></div><div><span class="label">Tema</span><strong>'+(r.theme||'-')+'</strong></div><div class="full"><span class="label">Locações</span><strong>'+lines+'</strong></div><div><span class="label">Evento</span><strong>'+fmt(r.date)+'</strong></div><div><span class="label">Entrega</span><strong>'+fmt(r.delivery)+'</strong></div><div><span class="label">Devolução</span><strong>'+fmt(r.returnDate)+'</strong></div><div><span class="label">Status</span><strong>'+st+'</strong></div><div><span class="label">Valor</span><strong>'+money(r.value)+'</strong></div><div><span class="label">Entrada recebida</span><strong>'+money(r.paid)+'</strong></div><div><span class="label">Saldo a pagar na retirada</span><strong>'+money(saldo)+'</strong></div><div class="full"><span class="label">Observação</span><strong>'+(r.obs||'-')+'</strong></div></div>';
   let actions=modal.querySelector('.actions');if(!actions){actions=document.createElement('div');actions.className='actions';modal.querySelector('.modalbox').appendChild(actions)}actions.innerHTML='<button class="btn light" type="button" id="closeReservationDetailsBtn">Fechar</button><button class="btn light" type="button" id="editReservationBtn">✏️ Editar reserva</button><button class="btn primary" type="button" id="generateContractBtn">📄 Gerar contrato</button>';document.getElementById('closeReservationDetailsBtn').onclick=function(){closeModal('reservationDetails')};document.getElementById('editReservationBtn').onclick=function(){closeModal('reservationDetails');openReservationModal(id)};document.getElementById('generateContractBtn').onclick=function(){generateContract(id)};modal.classList.add('show');
 }
 
